@@ -64,4 +64,8 @@ final class PanelSqliteConnection {
  public function commit():void {$this->pdo->commit();}
  public function rollback():void {if($this->pdo->inTransaction()){$this->pdo->rollBack();}}
 }
-function panelSqliteConnection():PanelSqliteConnection {static $db;return $db??=new PanelSqliteConnection(getenv('PERSONAL_DB_FILE')?:dirname(__DIR__,2).'/storage/personal.sqlite');}
+function panelSqliteConnection(): PanelSqliteConnection {
+    global $databaseFile;
+    static $db;
+    return $db ??= new PanelSqliteConnection(getenv('PANEL_DB_FILE') ?: getenv('PERSONAL_DB_FILE') ?: $databaseFile);
+}

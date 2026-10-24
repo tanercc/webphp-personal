@@ -1,8 +1,10 @@
-# Personal CMS geliştirme rehberi
+# CMS referans deposu ve Personal örneği
 
 - Bu depo bağımsız bir PHP 8.4 + SQLite portföy demosudur. Başka projelerde değişiklik yapma; başka sitelerden içerik/config/upload/kullanıcı taşıma.
+- Yeniden kullanımda önce `docs/mimari.md` ve `docs/yeni-site.md`. Personal bu repoda çalışan örnek olarak kalır. Yeni proje için `tools/create-site.php`; çalışma DB/oturum/upload/sır ve demo seed'ini kopyalama. Yeni hedefte `starter/AGENTS.md` rehberi kullanılır.
 - Önce `git status --short`. Çalışma kökü bu klasördür; çalışma DB'si `storage/personal.sqlite`, oturumlar ve loglar Git dışındadır.
 - Composer/npm gerekmez. Mevcut panel ve resmî paketler korunur; vendor kaynaklarını elle yamalama veya editör/filemanager değiştirme.
+- `config/site.php` kurulum adı/profil/DB/session ayarlarını tutar; kaynak demo cookie ve DB yolu korunur. `database/seed-base.sql` temiz metadata/ana sayfa içerir, kullanıcı içermez; starter yöneticisi kurulumda çevreden verilen parola hash'iyle oluşturulur.
 - `database/schema.sql` CREATE kodlarını, `database/seed.sql` yalnız kurgusal başlangıç verilerini içerir. İkisini yapılan şema değişikliğiyle birlikte güncelle. Kurulum mevcut DB'yi silmez/ezmez; canlı veriye seed import etme.
 - PDO SQLite adaptörü `panel/include/sqlite.php` içindedir. Prepared değerleri koru; identifier ve tablo/alan allowlist kontrollerini kaldırma. Adaptör sadece panelin mevcut sorgu sözleşmesini kapsar.
 - HTTP API `data/itemsCount`, string ID, soft-delete, çeviri ve rol/işlem/alan/CSRF sözleşmelerini korur. SQLite `PRAGMA table_info` kolon tip/default bilgileri form üretiminde kullanılır.

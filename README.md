@@ -2,6 +2,16 @@
 
 Start Bootstrap Personal 1.0.1 temasının mevcut PHP CMS ile çalışan bağımsız demosu. Kaynak sitenin içeriği, görselleri, kullanıcıları, veritabanı kayıtları ve yerel config dosyaları taşınmaz. Profil ve örnek çalışmalar kurgusaldır; profil fotoğrafı Personal temasının kendi dağıtımındandır.
 
+## Yeni projelerde yeniden kullanım
+
+Personal çalışan örnek olarak bu repoda kalır. Temiz bir kardeş proje üretmek için:
+
+```powershell
+php tools/create-site.php --target=../yeni-site --name="Yeni Firma"
+```
+
+Bu komut demo hesabı/içerikleri/görselleri, runtime DB, session, log, upload veya özel config taşımaz; mevcut hedefin üzerine yazmaz. Yeni kopya sade PHP ön yüzü ve ayrı yönetici kurulumu ile başlar. [Yeni site rehberi](docs/yeni-site.md) ve [kısa mimari harita](docs/mimari.md) geliştirici/AI için ilk okunacak dosyalardır. Temiz başlangıç SQL'i `database/seed-base.sql`, kopyalanabilir örnek iskelet `starter/site/` altındadır.
+
 ## Çalıştırma
 
 PHP 8.4 ve `pdo_sqlite`, `mbstring`, `dom`, `fileinfo`, `gd` eklentileri gerekir. Composer veya npm kurulumu gerekmez.
@@ -24,8 +34,9 @@ Bu hesap yalnız yerel demo içindir. Uygulama gerçek `REMOTE_ADDR` loopback de
 ## CREATE ve seed SQL
 
 - `database/schema.sql`: 28 tablo, indeksler, çeviri unique anahtarları ve template foreign key ilişkileri.
+- `database/seed-base.sql`: portföy ve sabit kullanıcı içermeyen temiz başlangıç.
 - `database/seed.sql`: yeni portföy sayfaları, menü, site değişkenleri, proje/özgeçmiş verileri ve yalnız demoya ait kullanıcı.
-- `tools/install.php`: SQL dosyalarını geçici SQLite dosyasında uygular; integrity/foreign-key kontrolünden sonra yayınlar. Mevcut DB'yi sıfırlamaz.
+- `tools/install.php`: demo veya starter profiliyle SQL dosyalarını geçici SQLite dosyasında uygular; integrity/foreign-key kontrolünden sonra yayınlar. Mevcut DB'yi sıfırlamaz.
 - `tools/seed-media.php`: temanın profil görselini ve yeni örnek proje görsellerini kayıt klasörlerine kopyalar; mevcut dosyaları ezmez.
 - `storage/personal.sqlite`: çalışan veritabanı; Git dışındadır ve HTTP'den erişilemez.
 

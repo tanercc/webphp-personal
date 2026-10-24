@@ -119,10 +119,10 @@ if (!$_SESSION['userAuthorized']) {
     <footer class="main-footer">
       <!-- To the right -->
       <div class="float-right d-none d-sm-inline">
-        Personal · SQLite demo
+        <?= panelHtml(trim($panel_name)) ?> · SQLite
       </div>
       <!-- Default to the left -->
-      <strong>Personal CMS Demo.</strong> All rights reserved.
+      <strong><?= panelHtml(trim($panel_name)) ?></strong> All rights reserved.
     </footer>
   </div>
   <!-- ./wrapper -->

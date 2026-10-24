@@ -1,3 +1,4 @@
-# ignore config file
-
-config.php
+# Only private configuration is ignored. config.php is a public loader bridge.
+config.runtime.php
+config.local.php
+config.domain.php

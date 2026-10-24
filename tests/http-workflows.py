@@ -24,7 +24,7 @@ def csrf(html):
  assert m,'Missing CSRF';return m[1]
 
 with tempfile.TemporaryDirectory(prefix='personal-sqlite-test-') as tmp:
- tmp=Path(tmp);(tmp/'sessions').mkdir();env=os.environ.copy();env.update(PERSONAL_DB_FILE=str(tmp/'test.sqlite'),PERSONAL_SESSION_PATH=str(tmp/'sessions'),PERSONAL_RATE_FILE=str(tmp/'rate.json'))
+ tmp=Path(tmp);(tmp/'sessions').mkdir();env=os.environ.copy();env.update(PANEL_DB_FILE=str(tmp/'test.sqlite'),PERSONAL_DB_FILE=str(tmp/'test.sqlite'),PERSONAL_SESSION_PATH=str(tmp/'sessions'),PERSONAL_RATE_FILE=str(tmp/'rate.json'))
  subprocess.run([PHP,str(ROOT/'tools/install.php')],env=env,check=True,capture_output=True)
  before=hashlib.sha256((tmp/'test.sqlite').read_bytes()).hexdigest()
  refuse=subprocess.run([PHP,str(ROOT/'tools/install.php')],env=env,capture_output=True)
@@ -110,3 +110,86 @@ with tempfile.TemporaryDirectory(prefix='personal-sqlite-test-') as tmp:
   text=(tmp/'server.log').read_text(errors='replace')
   assert not re.search(r'PHP (?:Fatal|Warning|Deprecated)|CMS database operation failed',text),text[-2000:]
 print('PASS: disposable SQLite database, sessions and test server removed; demo content unchanged')
+
+# The same suite checks the reusable starter; no duplicate fixture or live-demo writes.
+starter_checks_before=count
+with tempfile.TemporaryDirectory(prefix='cms-starter-test-') as tmp:
+ tmp=Path(tmp);target=tmp/'new-site';email='admin@starter.test';password='FixtureStarter!2026'
+ source_db_hash=hashlib.sha256((ROOT/'storage/personal.sqlite').read_bytes()).hexdigest()
+ existing=tmp/'existing';existing.mkdir();(existing/'keep.txt').write_text('preserve')
+ result=subprocess.run([PHP,str(ROOT/'tools/create-site.php'),'--target='+str(existing)],cwd=ROOT,capture_output=True)
+ assert result.returncode==1 and (existing/'keep.txt').read_text()=='preserve'
+ result=subprocess.run([PHP,str(ROOT/'tools/create-site.php'),'--target='+str(ROOT/'forbidden-nested-site')],cwd=ROOT,capture_output=True)
+ assert result.returncode==1 and not (ROOT/'forbidden-nested-site').exists()
+ create=subprocess.run([PHP,str(ROOT/'tools/create-site.php'),'--target='+str(target),'--name=Yeni Firma & Ortakları'],cwd=ROOT,capture_output=True)
+ assert create.returncode==0,create.stderr.decode(errors='replace')
+ for forbidden in ['.git','storage/personal.sqlite','storage/site.sqlite','config/config.runtime.php','assets/profile.png','database/seed.sql','templates/pages','app/contact.php','panel/content-messages.php']:
+  assert not (target/forbidden).exists(),forbidden
+ assert not list((target/'uploads').rglob('*.png'))
+ assert "'starter'" in (target/'config/site.php').read_text(encoding='utf-8')
+ assert 'PersonalDemo!2026' not in (target/'database/seed-base.sql').read_text(encoding='utf-8')
+ before=(target/'config/site.php').read_bytes()
+ repeat=subprocess.run([PHP,str(ROOT/'tools/create-site.php'),'--target='+str(target)],cwd=ROOT,capture_output=True)
+ assert repeat.returncode==1 and before==(target/'config/site.php').read_bytes()
+ env={key:value for key,value in os.environ.items() if not key.startswith(('PANEL_','PERSONAL_'))}
+ verify=subprocess.run([PHP,str(target/'tools/verify.php')],cwd=target,env=env,capture_output=True)
+ assert verify.returncode==1 and not (target/'storage/site.sqlite').exists()
+ missing=subprocess.run([PHP,str(target/'tools/install.php'),'--admin-email='+email],cwd=target,env=env,capture_output=True)
+ assert missing.returncode==1 and not (target/'storage/site.sqlite').exists()
+ env['PANEL_ADMIN_PASSWORD']=password
+ install=subprocess.run([PHP,str(target/'tools/install.php'),'--admin-email='+email],cwd=target,env=env,capture_output=True)
+ assert install.returncode==0,install.stderr.decode(errors='replace')
+ assert password.encode() not in install.stdout+install.stderr
+ c=sqlite3.connect(target/'storage/site.sqlite')
+ assert c.execute('SELECT count(*) FROM users').fetchone()[0]==1
+ assert c.execute('SELECT email FROM users').fetchone()[0]==email
+ assert c.execute('SELECT count(*) FROM datas').fetchone()[0]==0
+ assert c.execute('SELECT count(*) FROM pages').fetchone()[0]==1
+ assert c.execute('SELECT count(*) FROM logs').fetchone()[0]==0
+ assert c.execute('SELECT count(*) FROM sqlite_master WHERE name="contact_limits"').fetchone()[0]==1
+ assert not list((target/'uploads/files').rglob('*'))
+ fingerprint=hashlib.sha256((target/'storage/site.sqlite').read_bytes()).hexdigest()
+ refuse=subprocess.run([PHP,str(target/'tools/install.php'),'--admin-email='+email],cwd=target,env=env,capture_output=True)
+ assert refuse.returncode==1 and fingerprint==hashlib.sha256((target/'storage/site.sqlite').read_bytes()).hexdigest()
+ verify=subprocess.run([PHP,str(target/'tools/verify.php')],cwd=target,env=env,capture_output=True)
+ assert verify.returncode==0,verify.stderr.decode(errors='replace')
+ assert b'0 official theme assets' in verify.stdout
+ c.close()
+ with socket.socket() as sock:sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
+ base='http://127.0.0.1:'+str(port)
+ with open(tmp/'starter-server.log','wb') as log:
+  server=subprocess.Popen([PHP,'-d','display_errors=0','-d','error_log='+str(tmp/'starter-errors.log'),'-S','127.0.0.1:'+str(port),'-t',str(target),str(target/'router.php')],cwd=target,env=env,stdout=log,stderr=log)
+  try:
+   for attempt in range(60):
+    try:urllib.request.urlopen(base,timeout=1).close();break
+    except OSError:time.sleep(.1)
+   else:raise AssertionError('Starter server failed to start')
+   guest=client();admin=client()
+   html=request(guest,'GET','/');assert 'Yeni Firma &amp; Ortakları' in html and 'Deniz' not in html
+   assert 'assets/profile.png' not in html
+   for url,sri in re.findall(r'href="([^\"]+)" integrity="(sha384-[^\"]+)"',html):
+    asset=target/url.split('?')[0].lstrip('/');assert sri=='sha384-'+base64.b64encode(hashlib.sha384(asset.read_bytes()).digest()).decode()
+   for path in ['/storage/site.sqlite','/database/seed-base.sql','/config/site.php','/starter/site/index.php','/starter/site/css/site.css','/tools/create-site.php']:
+    request(guest,'GET',path,status=403)
+   js(guest,'GET','/panel/api/pages',status=401)
+   login=request(admin,'GET','/panel/');token=csrf(login)
+   home=request(admin,'POST','/panel/',{'email':email,'password':password,'csrf_token':token});token=csrf(home)
+   assert 'Yeni Firma &amp; Ortakları' in home and 'Personal demo' not in home and 'İletişim mesajları' not in home
+   for path in ['/panel/pages','/panel/pages/1','/panel/pages/1/tr','/panel/datas','/panel/datas/new','/panel/variables','/panel/menus']:
+    request(admin,'GET',path)
+   assert js(admin,'GET','/panel/api/datas')['itemsCount']==0
+   page=js(admin,'POST','/panel/api/pages',{'name':'Hizmetler','slug':'hizmetler','type_id':'1'},token=token)['id']
+   js(admin,'POST','/panel/api/lang',{'lang_table':'page_lang','row_id':page,'lang_id':'1','title':'Yeni hizmet sayfası','content':'<p>Starter body</p><script>alert(1)</script>'},token=token)
+   html=request(guest,'GET','/hizmetler');assert 'Yeni hizmet sayfası' in html and '<p>Starter body</p>' in html and '<script>alert(1)</script>' not in html
+   js(admin,'POST','/panel/api/menus',{'name':'Hizmetler','type_id':'1','link':'/hizmetler','page_id':page},token=token)
+   assert 'href="/hizmetler"' in request(guest,'GET','/')
+   request(admin,'POST','/panel/logout',{'csrf_token':token})
+   js(admin,'GET','/panel/api/pages',status=401)
+  finally:
+   server.terminate();server.wait(timeout=10)
+  if (tmp/'starter-errors.log').exists():
+   assert (tmp/'starter-errors.log').stat().st_size==0, (tmp/'starter-errors.log').read_text(errors='replace')[-2200:]
+  log_text=(tmp/'starter-server.log').read_text(errors='replace')
+  assert not re.search(r'PHP (?:Fatal|Warning|Deprecated)|CMS database operation failed',log_text),log_text[-2000:]
+ assert source_db_hash==hashlib.sha256((ROOT/'storage/personal.sqlite').read_bytes()).hexdigest()
+print('PASS:',count-starter_checks_before,'starter HTTP requests plus clean export/install/refusal/vendor checks; Personal DB unchanged')

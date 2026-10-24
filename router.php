@@ -3,7 +3,7 @@
 $root=__DIR__;$path=parse_url($_SERVER['REQUEST_URI']??'/',PHP_URL_PATH)?:'/';
 for($i=0;$i<5;$i++){$next=rawurldecode($path);if($next===$path){break;}$path=$next;}
 if(str_contains($path,'%')||preg_match('~[\x00-\x1f\x7f\\\\]|(?:^|/)\.{1,2}(?:/|$)~',$path)){http_response_code(403);exit('Forbidden');}
-if(preg_match('~^/(?:config|app|templates|database|tools|storage|docs|tests|upstream|\.git|\.build)(?:/|$)|(?:^|/)\.(?!well-known)|^/panel/(?:include|sql|temp)(?:/|$)|^/panel/plugins/(?:[^/]+/)*(?:samples|examples|demos|tests?)(?:/|$)|^/panel/plugins/(?:htmlpurifier|util)(?:/|$)~i',$path)){http_response_code(403);exit('Forbidden');}
+if(preg_match('~^/(?:config|app|templates|database|tools|storage|docs|tests|starter|upstream|\.git|\.build)(?:/|$)|(?:^|/)\.(?!well-known)|^/panel/(?:include|sql|temp)(?:/|$)|^/panel/plugins/(?:[^/]+/)*(?:samples|examples|demos|tests?)(?:/|$)|^/panel/plugins/(?:htmlpurifier|util)(?:/|$)~i',$path)){http_response_code(403);exit('Forbidden');}
 $file=$root.$path;
 if(str_starts_with($path,'/uploads/')){
  if(!is_file($file)||preg_match('/\.(?:php[0-9]*|phtml|pht|phar|cgi|pl|py|sh|shtml)(?:\.|$)/i',$path)){http_response_code(403);exit('Forbidden');}

@@ -40,7 +40,7 @@ isset($loginResult) ?: $loginResult = null;
     <!-- /.login-logo -->
     <div class="card">
       <div class="card-body login-card-body">
-        <p class="login-box-msg">Personal demo paneline giriş yapın</p>
+        <p class="login-box-msg"><?= panelHtml(trim($panel_name)) ?> paneline giriş yapın</p>
 
         <form id="login-form" action="" method="POST">
           <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(panelCsrfToken(), ENT_QUOTES, 'UTF-8') ?>">
