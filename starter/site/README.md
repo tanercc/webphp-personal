@@ -1,15 +1,15 @@
-# Yeni site — PHP CMS + SQLite
+# New site — PHP CMS + SQLite
 
-Bu klasör boş başlangıç komutuyla üretildi. Örnek portföy, demo hesabı, kullanıcı dosyaları veya başka bir projenin Git geçmişi taşınmadı. PHP 8.4; Composer/npm gerekmez.
+This directory was generated from the clean starter. No sample portfolio, demo account, user files, or source Git history was copied. Requires PHP 8.4; Composer/npm is not required.
 
-Önce `AGENTS.md`, `docs/mimari.md` ve `docs/yeni-site.md` okuyun. Tasarımı `templates/` altında manuel PHP/HTML/CSS ile oluşturun; panel çekirdeğinde siteye özel tasarım kodu yazmayın.
+Read `AGENTS.md`, `docs/mimari.md`, and `docs/yeni-site.md` first. Build the site manually with PHP/HTML/CSS in `templates/`; keep site-specific design out of the panel core.
 
-## Kurulum
+## Installation
 
-PowerShell üzerinde parolayı komut geçmişine yazmadan:
+In PowerShell, supply the password without putting it into command history:
 
 ```powershell
-$secret = Read-Host 'Yönetici parolası (12-72 byte)' -AsSecureString
+$secret = Read-Host 'Administrator password (12-72 bytes)' -AsSecureString
 $env:PANEL_ADMIN_PASSWORD = [System.Net.NetworkCredential]::new('', $secret).Password
 php tools/install.php --admin-email=admin@example.test
 Remove-Item Env:\PANEL_ADMIN_PASSWORD
@@ -18,9 +18,9 @@ php tools/verify.php
 php -S 127.0.0.1:8876 -t . router.php
 ```
 
-E-posta adresini kendinize göre değiştirin. PHP komutu başarısızsa hata mesajını kontrol edin. Site `http://127.0.0.1:8876/`, panel `/panel/`. Başka bir demo 8876 portunu kullanıyorsa boş bir port seçin.
+Replace the email address. If a PHP command fails, check the error before continuing. The website is at `http://127.0.0.1:8876/`, and the panel at `/panel/`. Choose an available port if another demo is already using 8876.
 
-`config/site.php` site adı, DB yolu ve kurulum profili; `config/panel-fields.php` özel alan etiketleridir. Sırlar için Git dışındaki `config/config.runtime.php` kullanılır. DB `storage/site.sqlite` içindedir; `database/schema.sql` ve `database/seed-base.sql` yeniden kurulabilir kaynaktır. Seed dosyasında sabit yönetici hesabı yoktur. Kurulum var olan DB'yi ezmez.
+`config/site.php` defines the site name, database path, and installation profile; `config/panel-fields.php` contains custom field labels. Put secrets in the Git-ignored `config/config.runtime.php`. The database is `storage/site.sqlite`; `database/schema.sql` and `database/seed-base.sql` are its reproducible setup sources. The seed has no fixed administrator account. Installation refuses to overwrite an existing database.
 
 ```powershell
 git init
@@ -28,4 +28,4 @@ git add .
 git commit -m "Initialize standalone CMS site"
 ```
 
-Bu başlangıç da yalnız loopback erişimine açıktır. Üretime alma; kimlik doğrulama, CAPTCHA, sunucu, yedekleme ve mail ayarları için ayrı değerlendirme gerektirir. Koruma otomatik kaldırılmaz.
+This starter also accepts loopback access only. Production deployment requires a separate assessment of authentication, CAPTCHA, server configuration, backups, and email settings. The restriction is not removed automatically.

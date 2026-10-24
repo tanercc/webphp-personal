@@ -1,56 +1,56 @@
-# Geliştirici için kısa dosya haritası
+# Developer architecture map
 
-## Başlangıç sırası
+## Read in this order
 
-1. `AGENTS.md`: o deponun kapsamı ve korunacak sözleşmeler.
-2. `README.md`, `config/site.php`: hangi örnek/kurulum, DB ve çalıştırma yolu.
-3. `database/schema.sql`, ihtiyaca göre ilgili seed satırları.
-4. Aşağıdaki tablodan görevle ilgili giriş noktası. Vendor dosyalarını topluca okumayın.
+1. `AGENTS.md`: the repository's scope and contracts to preserve.
+2. `README.md`, `config/site.php`: the example/installation profile, database, and startup instructions.
+3. `database/schema.sql` and the seed entries relevant to the task.
+4. The entry point below that matches the task. Do not read all vendor files indiscriminately.
 
-| Görev | Önce okunacak dosya / sembol |
+| Task | Start with these files / symbols |
 |---|---|
-| Ön yüz rotası ve sayfa | `index.php`, `templates/`; örnek Personal'da `templates/pages/` + `partials/` |
-| Site verisi | `app/bootstrap.php`: `sitePage`, `siteRecords`, `setting`, `siteRows` |
-| Kurulum ve temiz kopya | `tools/install.php`, `tools/create-site.php`, `config/site.php`, `starter/` |
-| DB bağlantısı / metadata | `panel/include/sqlite.php`: `PanelSqliteConnection`, `columns`, `execute_query` |
-| Eski panel yardımcıları | `panel/include/db_functions.php`: `sqlQuery`, `dbGetTableData`, `dbGetTableFields` |
-| API yönlendirme/CSRF | `panel/api/index.php` |
-| API izinleri ve alanlar | `panel/api/security.php`: `apiAuthorize`, `apiWritableFields`, `apiValidateFields` |
-| CRUD/sayfalama/çeviri | `panel/api/database.php`; `request.php`, `lang.php` |
-| Form alanları | `panel/content-*-id.php`, `panel/php/input-*.php`, `config/panel-fields.php` |
-| Kullanıcı/rol/oturum | `panel/include/login.php`, `login_security.php`, `permissions.php`, `session.php`, `csrf.php` |
-| Kayıt kapsamlı dosya seçimi | `panel/include/media_access.php`, `panel/plugins/filemanager/config/config.php` |
-| Güvenli çıktı | `panel/include/output.php`, `rich_html.php`; `e`, `panelHtml`, `panelRichHtml` |
-| HTTP erişim sınırları | `.htaccess`, `panel/.htaccess`, `router.php`, `uploads/.htaccess` |
-| Paket bütünlüğü | `panel/plugins/DEPENDENCIES.json`, `tools/verify.php` |
+| Frontend routing and pages | `index.php`, `templates/`; Personal uses `templates/pages/` + `partials/` |
+| Site data | `app/bootstrap.php`: `sitePage`, `siteRecords`, `setting`, `siteRows` |
+| Installation and clean copies | `tools/install.php`, `tools/create-site.php`, `config/site.php`, `starter/` |
+| Database connection / metadata | `panel/include/sqlite.php`: `PanelSqliteConnection`, `columns`, `execute_query` |
+| Legacy panel helpers | `panel/include/db_functions.php`: `sqlQuery`, `dbGetTableData`, `dbGetTableFields` |
+| API routing / CSRF | `panel/api/index.php` |
+| API permissions and fields | `panel/api/security.php`: `apiAuthorize`, `apiWritableFields`, `apiValidateFields` |
+| CRUD / pagination / translations | `panel/api/database.php`; `request.php`, `lang.php` |
+| Form fields | `panel/content-*-id.php`, `panel/php/input-*.php`, `config/panel-fields.php` |
+| Users / roles / sessions | `panel/include/login.php`, `login_security.php`, `permissions.php`, `session.php`, `csrf.php` |
+| Record-scoped file selection | `panel/include/media_access.php`, `panel/plugins/filemanager/config/config.php` |
+| Safe output | `panel/include/output.php`, `rich_html.php`; `e`, `panelHtml`, `panelRichHtml` |
+| HTTP access boundaries | `.htaccess`, `panel/.htaccess`, `router.php`, `uploads/.htaccess` |
+| Package integrity | `panel/plugins/DEPENDENCIES.json`, `tools/verify.php` |
 
-## İstek akışları
+## Request flows
 
-- Ziyaretçi: router/rewrite → `index.php` → `app/bootstrap.php` → parametreli okuma → izinli PHP şablonu.
-- Panel: `panel/index.php` → config/DB/oturum/rol → liste veya kayıt formu.
-- API: `panel/api/index.php` → oturum/rol/yöntem/CSRF → tablo/alan/filtre izinleri → SQLite adaptörü → JSON.
-- Medya: Filemanager girişleri → ortak oturum/rol/CSRF → `RF.subfolder` kaynak/kayıt sınırı → dosya işlemi.
+- Visitor: router/rewrite → `index.php` → `app/bootstrap.php` → parameterized read → allowed PHP template.
+- Panel: `panel/index.php` → configuration/database/session/role → list or record form.
+- API: `panel/api/index.php` → session/role/method/CSRF → table/field/filter permissions → SQLite adapter → JSON.
+- Media: Filemanager entry points → shared session/role/CSRF → `RF.subfolder` resource/record boundary → file operation.
 
-Panel formu şema kolon tip/default bilgilerini kullanır. SQLite adaptörü mevcut `SHOW COLUMNS` / legacy sonuç arabiriminin yalnız kullanılan bölümünü karşılar; genel MySQL uyumluluk katmanı değildir. Yeni sorgu gerektiğinde SQLite desteğini ve izin listesini birlikte kontrol edin.
+Panel forms use schema column types and defaults. The SQLite adapter covers only the existing `SHOW COLUMNS` / legacy result interface currently used by the application; it is not a general MySQL compatibility layer. Check SQLite support and allowlists together when introducing a query.
 
-## Değişmez sözleşmeler
+## Stable contracts
 
-- Liste JSON'u `data` ve `itemsCount`; kimlik değerleri istemcide string olarak korunur.
-- `deleted` soft-delete, `is_active` yayın durumu, `sort_order` sıralamadır.
-- Genel kayıt ile `*_lang` çevirileri `row_id/lang_id` üzerinden ayrılır; dolu çeviri alanı genel değeri geçersiz kılar.
-- Şablon yolu DB'den alınmaz; kodlar `config/data-templates.php` izin listesinden çözülür. Kayıt → kategori → varsayılan önceliği korunur.
-- Medya kökü kurulum ve kayıt bazındadır. Ortak upload kökünü seçiciye açmayın.
-- Zengin HTML yalnız çıktı aşamasında `panelRichHtml`; form/DB içeriği topluca değiştirilmez.
-- `assetAttributes` ve `scriptAttributes` dosya baytlarından SRI + içerik sürümü üretir.
-- Site görünümü manuel PHP parçalarındadır. Panel ortak çekirdeğine firma veya tema davranışı gömmeyin.
+- List JSON uses `data` and `itemsCount`; identifiers remain strings on the client.
+- `deleted` implements soft deletion, `is_active` controls publication, and `sort_order` controls ordering.
+- General records and `*_lang` translations are linked by `row_id/lang_id`; non-empty translated fields override general values.
+- Template paths never come from the database. Resolve codes through `config/data-templates.php`, preserving record → category → default precedence.
+- Media roots are installation- and record-specific. Do not expose the shared upload root in the picker.
+- Apply `panelRichHtml` when rendering rich HTML; never sanitize and rewrite form/database content in bulk.
+- `assetAttributes` and `scriptAttributes` derive SRI and content versions from file bytes.
+- Assemble the site manually with PHP partials. Do not put company-specific or theme behavior in the shared panel core.
 
-## Hangi doğrulama?
+## Verification by change type
 
-- PHP değişikliği: ilgili dosyalarda `php -d error_reporting=32767 -l ...`.
-- Panel/API/DB/kurulum değişikliği: bu referans repoda `python tests/http-workflows.py`. Aynı süit demo ve üretilen temiz siteyi ayrı SQLite/oturum/sunucuyla dener.
-- Paket/kurulum: `php tools/verify.php`; DB yoksa dosya yaratmadan reddeder.
-- Yeni hedef repoda Personal'a özel HTTP süiti kopyalanmaz. Yeni projeye uygun testleri ayrı DB'de yazın; temel paket/SQLite kontrolü hazır gelir.
+- PHP changes: run `php -d error_reporting=32767 -l ...` on affected files.
+- Panel/API/database/setup changes: run `python tests/http-workflows.py` in this reference repository. One suite checks both the demo and a generated clean site with separate SQLite databases, sessions, and servers.
+- Package/setup changes: run `php tools/verify.php`; it refuses a missing database without creating one.
+- Generated projects do not receive the Personal-specific HTTP suite. Add project-appropriate tests with a separate database; baseline package/SQLite verification is included.
 
-Eksik bilgiyi gereken dosyadan okuyun. Bütün kaynak ağacını her seferinde taramak veya önceki sohbeti hatırlamaya güvenmek gerekmez.
+Read missing details from the relevant files. There is no need to scan the entire source tree on every task or rely on memory of a previous conversation.
 
-Doğrulanan referans turu: 101 Personal + 25 üretilen starter HTTP isteği; mevcut hedefe/DB'ye yazmayı reddetme, parolasız kurulumun reddi, yeni yönetici, demo içeriklerinin taşınmaması ve paket özetleri. `panel/include/config.php` sır içermeyen uyumluluk yükleyicisidir; Git'te izlenir. Yalnız private config dosyaları ignore edilir.
+The verified reference run covered 101 Personal + 25 generated-starter HTTP requests, destination/database overwrite refusal, missing-password rejection, a new administrator, exclusion of demo content, and package hashes. `panel/include/config.php` is a non-secret compatibility loader tracked in Git; only private configuration files are ignored.

@@ -1,20 +1,20 @@
 # Personal CMS — SQLite demo
 
-Start Bootstrap Personal 1.0.1 temasının mevcut PHP CMS ile çalışan bağımsız demosu. Kaynak sitenin içeriği, görselleri, kullanıcıları, veritabanı kayıtları ve yerel config dosyaları taşınmaz. Profil ve örnek çalışmalar kurgusaldır; profil fotoğrafı Personal temasının kendi dağıtımındandır.
+A standalone integration of Start Bootstrap Personal 1.0.1 with the existing PHP CMS. No source-site content, images, users, database records, or private configuration is carried over. The portfolio identity and sample projects are fictional; the profile photograph comes from the Personal theme's own distribution.
 
-## Yeni projelerde yeniden kullanım
+## Reuse in new projects
 
-Personal çalışan örnek olarak bu repoda kalır. Temiz bir kardeş proje üretmek için:
+Personal remains the working example in this repository. Create a clean sibling project with:
 
 ```powershell
-php tools/create-site.php --target=../yeni-site --name="Yeni Firma"
+php tools/create-site.php --target=../new-site --name="New Company"
 ```
 
-Bu komut demo hesabı/içerikleri/görselleri, runtime DB, session, log, upload veya özel config taşımaz; mevcut hedefin üzerine yazmaz. Yeni kopya sade PHP ön yüzü ve ayrı yönetici kurulumu ile başlar. [Yeni site rehberi](docs/yeni-site.md) ve [kısa mimari harita](docs/mimari.md) geliştirici/AI için ilk okunacak dosyalardır. Temiz başlangıç SQL'i `database/seed-base.sql`, kopyalanabilir örnek iskelet `starter/site/` altındadır.
+The command does not copy demo accounts/content/images, runtime databases, sessions, logs, uploads, or private configuration, and refuses to overwrite an existing destination. The new project starts with a plain PHP frontend and its own administrator setup. Begin with the [new-site guide](docs/yeni-site.md) and [architecture map](docs/mimari.md). The clean seed is `database/seed-base.sql`; the reusable scaffold is in `starter/site/`.
 
-## Çalıştırma
+## Run the demo
 
-PHP 8.4 ve `pdo_sqlite`, `mbstring`, `dom`, `fileinfo`, `gd` eklentileri gerekir. Composer veya npm kurulumu gerekmez.
+Requires PHP 8.4 with `pdo_sqlite`, `mbstring`, `dom`, `fileinfo`, and `gd`. Composer/npm installation is not required.
 
 ```powershell
 cd webphp-personal
@@ -22,67 +22,69 @@ php tools/install.php
 php -S 127.0.0.1:8876 -t . router.php
 ```
 
-Veritabanı zaten oluşturulmuşsa `install.php` mevcut dosyanın üzerine yazmayı reddeder. Çalışan demoda ikinci kez kurulum yapmanız gerekmez. `tools/serve.ps1` de sunucuyu başlatır.
+If the database already exists, `install.php` refuses to overwrite it. There is no need to reinstall the running demo. You can also start the server with `tools/serve.ps1`.
 
-- Site: http://127.0.0.1:8876/
+- Website: http://127.0.0.1:8876/
 - Panel: http://127.0.0.1:8876/panel/
-- Demo kullanıcı: `admin@personal.test`
-- Demo parola: `PersonalDemo!2026`
+- Demo email: `admin@personal.test`
+- Demo password: `PersonalDemo!2026`
 
-Bu hesap yalnız yerel demo içindir. Uygulama gerçek `REMOTE_ADDR` loopback değilse isteği reddeder. Girişte parola hash'i, CSRF, deneme sınırı ve oturum yenileme korunur; bu yerel demoda Google CAPTCHA kullanılmaz. İnternete dağıtım ayrı kimlik doğrulama/kurulum değerlendirmesi gerektirir. Sunucu `127.0.0.1` üzerinde başlatılmalıdır.
+This account is for the local demo only. Requests with a non-loopback `REMOTE_ADDR` are rejected. Login retains password hashing, CSRF, attempt limits, and session rotation; this local demo does not use Google CAPTCHA. Internet deployment requires a separate authentication/setup assessment. Bind the development server to `127.0.0.1`.
 
-## CREATE ve seed SQL
+## CREATE and seed SQL
 
-- `database/schema.sql`: 28 tablo, indeksler, çeviri unique anahtarları ve template foreign key ilişkileri.
-- `database/seed-base.sql`: portföy ve sabit kullanıcı içermeyen temiz başlangıç.
-- `database/seed.sql`: yeni portföy sayfaları, menü, site değişkenleri, proje/özgeçmiş verileri ve yalnız demoya ait kullanıcı.
-- `tools/install.php`: demo veya starter profiliyle SQL dosyalarını geçici SQLite dosyasında uygular; integrity/foreign-key kontrolünden sonra yayınlar. Mevcut DB'yi sıfırlamaz.
-- `tools/seed-media.php`: temanın profil görselini ve yeni örnek proje görsellerini kayıt klasörlerine kopyalar; mevcut dosyaları ezmez.
-- `storage/personal.sqlite`: çalışan veritabanı; Git dışındadır ve HTTP'den erişilemez.
+- `database/schema.sql`: 28 tables, indexes, unique translation keys, and template foreign keys.
+- `database/seed-base.sql`: a neutral starter without portfolio data or a fixed user account.
+- `database/seed.sql`: fictional portfolio pages, navigation, settings, project/resume records, and a demo-only user.
+- `tools/install.php`: applies the demo or starter SQL to a temporary SQLite file, checks integrity/foreign keys, and publishes the database. It never resets an existing database.
+- `tools/seed-media.php`: copies the theme profile image and new sample project images into record folders without overwriting existing files.
+- `storage/personal.sqlite`: the running database, excluded from Git and protected from HTTP access.
 
-SQL dosyaları standart SQLite 3 SQL'idir; herhangi bir SQLite istemcisinde boş veritabanına önce schema, ardından seed uygulanabilir. Medya için `php tools/seed-media.php` çalıştırın. Yedek almak için sunucuyu durdurup SQLite dosyasını ve `uploads/` dizinini birlikte kopyalayın.
+The SQL files use standard SQLite 3 syntax. For the demo, import the schema followed by its seed into an empty database with any SQLite client; run `php tools/seed-media.php` for media. To back up the installation, stop the server and copy the database file and `uploads/` together.
 
-## Panelden ne düzenlenir?
+## What can be edited in the panel?
 
-| Alan | Panel yeri | Kullanılan veri |
+Panel labels remain Turkish; the labels below identify the actual controls.
+
+| Content | Panel location | Data used |
 |---|---|---|
-| Ana başlık ve giriş satırı | Sayfalar → Ana sayfa → Türkçe | `page_lang.name/title`; rozet ve görsel Genel sekmesinde |
-| Hakkımda, iletişim, gizlilik ve koşullar | Sayfalar → ilgili sayfa → Türkçe | `page_lang.content`, HTML Purifier ile sunulur |
-| Projeler | Veriler → Projeler | Genel ad/kısa bilgi/görsel; Türkçe sekmesinde detay yazısı |
-| Deneyim ve eğitim | Veriler → ilgili tip | Dönem, kurum, konum; Türkçe sekmesinde açıklama |
-| Yetenek ve diller | Veriler → ilgili tip | Genel ad; dil çevirisi varsa adı geçersiz kılar |
-| Marka, sosyal bağlantılar, CTA ve alt bilgi | Ayarlar → Site değişkenleri | `variables` + Türkçe `variable_lang` |
-| Gezinme | Menüler → Menü listesi | `menus.link/name/sort_order` |
-| Gelen mesajlar | Panel başlangıç ekranı → Mesajlar | Yerel forma ait kayıtlar; HTML olarak çalıştırılmaz |
+| Main heading and introduction | Pages (`Sayfalar`) → Home (`Ana sayfa`) → Turkish (`Türkçe`) | `page_lang.name/title`; badge and image are in General (`Genel`) |
+| About, contact, privacy, and terms | `Sayfalar` → relevant page → `Türkçe` | `page_lang.content`, rendered through HTML Purifier |
+| Projects | Data (`Veriler`) → Projects (`Projeler`) | General name/summary/image; detail content in the Turkish tab |
+| Experience and education | `Veriler` → relevant type | Period, organization, location; description in the Turkish tab |
+| Skills and languages | `Veriler` → relevant type | General name; a translated name overrides it when present |
+| Brand, social links, CTA, and footer | Settings (`Ayarlar`) → Site variables | `variables` + Turkish `variable_lang` |
+| Navigation | Menus (`Menüler`) → Menu list | `menus.link/name/sort_order` |
+| Incoming messages | Panel dashboard → Messages (`Mesajlar`) | Local form submissions, never executed as HTML |
 
-Türkçe çeviri değerleri doluysa genel değerleri geçersiz kılar. Yeni veri kaydını önce Genel sekmesinde kaydedin; sonra Türkçe içerik ve kayıt kapsamlı dosya seçimi açılır. Siteye özgü ek alan etiketleri `config/panel-fields.php` içindedir; panelde marka kodu tutulmaz.
+Non-empty Turkish translations override general values. Save a new record in the General tab first; its Turkish content and record-scoped file picker become available afterward. Installation-specific field labels live in `config/panel-fields.php`, rather than brand-specific code in the panel.
 
-## Yapı
+## Structure
 
-- `panel/`: mevcut AdminLTE/jsGrid/CKEditor/Filemanager paneli ve rol/CSRF/alan izinleri.
-- `panel/include/sqlite.php`: PDO SQLite bağlantısı ve panelin kullandığı sınırlı sonuç/statement adaptörü. Genel bir MySQL emülatörü değildir; migration/dump/Adminer taşınmaz.
-- `app/`: halka açık sorgular, güvenli çıktılar ve iletişim işlemi.
-- `templates/pages/`: ana sayfa, özgeçmiş, projeler, proje detayı, iletişim, metin ve 404.
-- `templates/partials/`: head, nav, hero, proje/özgeçmiş kartları, CTA ve footer.
-- `config/`: bağımsız kurulum ve alan etiketleri.
+- `panel/`: the existing AdminLTE/jsGrid/CKEditor/Filemanager panel with role, CSRF, and field checks.
+- `panel/include/sqlite.php`: PDO SQLite connection and the limited result/statement interface used by the panel. It is not a general MySQL emulator. Migration/dump/Adminer tools are not included.
+- `app/`: public queries, safe output helpers, and contact processing.
+- `templates/pages/`: home, resume, projects, project detail, contact, text, and 404 pages.
+- `templates/partials/`: head, navigation, hero, project/resume cards, CTA, and footer.
+- `config/`: independent installation settings and field labels.
 
-Yeni tema/modül motoru eklenmedi. Personal tasarımı PHP parçalarıyla elle kurulur; CMS kayıtlarını okur. Paneldeki genel slider/kategori/şablon yönetimi korunur; Personal ön yüzü yalnız yukarıdaki içerik eşlemesini kullanır. Ön yüz varsayılan Türkçedir; panelin İngilizce çeviri kayıtları/API'si korunur, ayrı İngilizce ziyaretçi rotası bu demo kapsamında değildir.
+No theme/module engine was added. Personal is assembled manually from PHP partials that read CMS records. Generic slider/category/template management remains in the panel; the Personal frontend uses only the content mapping above. The public site defaults to Turkish. English translation records/API remain available in the panel; a separate English visitor route is outside this demo's scope.
 
-## İletişim ve medya
+## Contact and media
 
-İletişim formu sunucu doğrulaması, CSRF, honeypot ve IP başına 15 dakikada 5 mesaj sınırı uygular. Mesajlar SQLite'a yazılır; e-posta veya ücretli SB Forms servisine gönderilmez. Kayıt bazlı Filemanager kapsamı korunur: yalnız düzenlenen kaydın dosyaları görülür. Quick-upload, uzak URL yükleme, aktif belge yükleme ve arşiv açma kapalıdır.
+The contact form uses server-side validation, CSRF, a honeypot, and an IP limit of 5 messages per 15 minutes. Messages are stored in SQLite; no email or paid SB Forms service is used. Filemanager retains record-level scope: only the edited record's files are shown. Quick upload, remote URL loading, active-document uploads, and archive extraction remain disabled.
 
 ## ServBay
 
-Yeni PHP site belgesinin kökünü bu klasöre ayarlayıp PHP 8.4 seçin; örneğin `webphp-personal.test` alan adı kullanılabilir. Apache'de `mod_rewrite`, `mod_headers` ve `.htaccess` desteği gerekir. Nginx kullanılıyorsa config/database/storage/tools/templates erişim engelleri ve panel/API rewrite kuralları ayrıca eşdeğer şekilde tanımlanmalıdır. Mevcut başka sitelerin ServBay ayarları değiştirilmez. Yerel hazır önizleme yukarıdaki PHP sunucusundadır.
+Create a PHP site with this directory as its document root and select PHP 8.4; `webphp-personal.test` is one possible local hostname. Apache requires `mod_rewrite`, `mod_headers`, and `.htaccess` support. For Nginx, configure equivalent config/database/storage/tools/templates access restrictions and panel/API rewrites. Existing sites' ServBay settings are not modified. The ready-to-use preview runs on the PHP development server described above.
 
-## Doğrulama
+## Verification
 
 ```powershell
 python tests/http-workflows.py
 php tools/verify.php
 ```
 
-HTTP süiti ayrı SQLite dosyası, oturum ve sunucuda çalışır; demo içeriklerini değiştirmez. Kurulumun üzerine yazmayı reddetmesi, gerçek login/logout, liste/form/CRUD/çeviri, ek alanların ön yüzde görünmesi, iletişim, rol/CSRF, oran sınırı, SRI ve özel dosya erişim engellerini doğrular. Tarayıcıda masaüstü tema, 375px mobil menü/projeler, editör ve kayıt kapsamlı görsel seçimi kontrol edildi. Test sunucusu Apache `.htaccess` kurallarını uygulamaz; `router.php` eşdeğer engeller sağlar.
+The HTTP suite uses separate SQLite files, sessions, and servers; it does not change demo content. It checks overwrite refusal, real login/logout, lists/forms/CRUD/translations, custom fields appearing on the website, contact submissions, role/CSRF controls, rate limits, SRI, and private-file access restrictions. Browser checks covered the desktop theme, 375px mobile navigation/projects, the editor, and record-scoped image selection. The test server does not apply Apache `.htaccess` rules; `router.php` provides equivalent restrictions.
 
-Tema [Start Bootstrap Personal](https://github.com/startbootstrap/startbootstrap-personal), MIT: `LICENSE-THEME`. Dağıtılan CSS/JS/profil görseli değiştirilmedi; kaynak/özetler `docs/theme-source.json` ve `docs/theme-assets.json` içindedir. Panel paketleri kendi lisanslarını ve `panel/plugins/DEPENDENCIES.json` manifestini korur; vendor kaynakları yamalanmadı. CSS/JS SRI değerleri gerçek dosya baytlarından ve içerik sürümünden üretilir. Google fontları ve Filemanager'ın bazı alt bağımlılıkları hâlâ dış kaynak kullanır; tamamen çevrimdışı dağıtım iddiası yoktur. CKEditor ücretsiz 4.22.1'in kapalı özelliklere dayanan güvenlik sınırları `AGENTS.md` içindedir.
+Theme: [Start Bootstrap Personal](https://github.com/startbootstrap/startbootstrap-personal), MIT; see `LICENSE-THEME`. Distributed theme CSS/JS/profile assets are unchanged; sources and hashes are recorded in `docs/theme-source.json` and `docs/theme-assets.json`. Panel packages retain their own licenses and `panel/plugins/DEPENDENCIES.json`; vendor sources were not patched. CSS/JS SRI values and content versions are derived from actual file bytes. Google Fonts and some Filemanager subdependencies still load externally; this is not a fully offline distribution. The free CKEditor 4.22.1 configuration-based security boundaries are recorded in `AGENTS.md`.

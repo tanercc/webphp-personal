@@ -1,24 +1,24 @@
-# Bu altyapıyla yeni site oluşturma
+# Create a new website with this CMS
 
-Bu depo iki işi birlikte taşır: çalışan **Personal örneği** ve aynı CMS'ten temiz proje üretmek için **starter**. Örnek temayı taşımak zorunlu değildir. Yeni sitede bütün kaynak kodunu veya vendor paketlerini yeniden okumak gerekmez; aşağıdaki giriş noktalarıyla başlanır.
+This repository contains both a working **Personal example** and a **starter** for independent projects using the same CMS. The example theme is optional. You do not need to reread the entire source tree or every vendor package for each new site; start with the entry points below.
 
-## Hızlı başlangıç
+## Quick start
 
-Referans deponun kökünde, var olmayan bir kardeş klasör seçin:
+From the reference repository root, choose a sibling directory that does not exist:
 
 ```powershell
-php tools/create-site.php --target=../yeni-site --name="Yeni Firma"
-cd ../yeni-site
+php tools/create-site.php --target=../new-site --name="New Company"
+cd ../new-site
 ```
 
-Komut Git'te izlenen çekirdek dosyaların çalışma kopyasını alır. Git gereklidir; yeni sitenin PHP çalışma zamanında Git gerekmez. Yeni eklediğiniz çekirdek dosyayı önce Git'e alın. Hedef klasör zaten varsa, boş olsa bile üzerine yazılmaz. Kaynak repo içi hedef reddedilir. Kopya kendi `.git` dizinini veya commit geçmişini devralmaz; depo başlatma işlemi aşağıdadır.
+The command copies tracked core files from the working tree. Git is required to generate the project, but not to run the new PHP site. Track newly added core files before generating a copy. An existing destination is rejected even when empty. Destinations inside the source repository are also rejected. The new project does not inherit the source `.git` directory or commit history; initialize its repository as shown below.
 
-Taşınanlar: panel/paketler, SQLite adaptörü, şema/temiz seed, güvenlik yönlendirmeleri, sade PHP ön yüzü, kurulum/doğrulama araçları ve geliştirici rehberi. Taşınmayanlar: Personal tasarımı/görselleri/portföyü, demo seed'i/hesabı, çalışma DB'si, session/log/upload, özel config ve kaynak Git geçmişi. Kaynak `config/config.runtime.php` izleniyor olsa bile kopya listesinde yoktur.
+Included: the panel/packages, SQLite adapter, schema/clean seed, access restrictions and routing, plain PHP frontend, setup/verification tools, and developer guides. Excluded: the Personal design/images/portfolio, demo seed/account, runtime database, sessions/logs/uploads, private configuration, and source Git history. The source `config/config.runtime.php` is excluded even if tracked.
 
-Parolayı komut geçmişine yazmadan kurun:
+Install without writing the password into command history:
 
 ```powershell
-$secret = Read-Host 'Yönetici parolası (12-72 byte)' -AsSecureString
+$secret = Read-Host 'Administrator password (12-72 bytes)' -AsSecureString
 $env:PANEL_ADMIN_PASSWORD = [System.Net.NetworkCredential]::new('', $secret).Password
 php tools/install.php --admin-email=admin@example.test
 Remove-Item Env:\PANEL_ADMIN_PASSWORD
@@ -27,7 +27,7 @@ php tools/verify.php
 php -S 127.0.0.1:8877 -t . router.php
 ```
 
-E-posta adresini değiştirin; 8877 örnek boş porttur. Başarısız komutun hata mesajını çözmeden sonraki adıma geçmeyin. Yönetici parolası SQL'e, belgeye veya komut argümanına kaydedilmez; veritabanında yalnız hash bulunur. Varsayılan/demo kullanıcı oluşturulmaz. Site kökte, panel `/panel/` adresindedir.
+Replace the email address; 8877 is an example available port. Resolve failed commands before continuing. The administrator password is not recorded in SQL, documentation, or command arguments; only its hash is stored in the database. No default/demo user is created. The website is served at the root, and the panel at `/panel/`.
 
 ```powershell
 git init
@@ -35,43 +35,43 @@ git add .
 git commit -m "Initialize standalone CMS site"
 ```
 
-## Yeni tasarımı nereye yazacağız?
+## Where to build the new design
 
-- `index.php`: URL → izinli sayfa eşlemesi. DB'deki değerleri serbest include yoluna dönüştürmeyin.
-- `templates/`: yeni tasarımın manuel PHP sayfa ve bölüm dosyaları. Ortak head/nav/footer burada ayrılır.
-- `css/`, `js/`, `assets/`: yalnız yeni sitenin dosyaları. CSS/JS linklerinde SRI ve içerik sürümü üreten mevcut yardımcıları kullanın.
-- `config/site.php`: site adı, kurulum profili, DB yolu ve bağımsız session adı.
-- `config/panel-fields.php`: ihtiyaç varsa veri tipinin özel kolon etiketleri.
-- `database/schema.sql`: tablo/indeks yapısı; `database/seed-base.sql`: temiz başlangıç kayıtları. Site içerik seed'i eklenecekse ayrı ve sır içermeyen dosya kullanın.
-- `panel/`: rol/CRUD/form/medya çekirdeği. Sırf yeni tasarım için burada kod değiştirmeyin.
+- `index.php`: URL-to-allowed-page mapping. Never turn database values into unrestricted include paths.
+- `templates/`: manually assembled PHP page and section files. Separate shared head/navigation/footer partials here.
+- `css/`, `js/`, `assets/`: files belonging to the new site. Use the existing helpers to generate CSS/JS SRI and content versions.
+- `config/site.php`: site name, installation profile, database path, and independent session name.
+- `config/panel-fields.php`: custom column labels for data types, when needed.
+- `database/schema.sql`: tables/indexes; `database/seed-base.sql`: neutral setup records. Keep any site-specific content seed separate and free of secrets.
+- `panel/`: the shared role/CRUD/form/media core. Do not change it merely to implement a new design.
 
-Yeni hedefte Personal'a ait `templates/pages/`, CSS, görsel ve ücretli form entegrasyonu bulunmaz. Sade `templates/page.php` değiştirilerek yeni tasarım oluşturulur. Yeni tema motoru kurulmaz.
+Generated projects contain none of Personal's `templates/pages/`, CSS, images, or paid form integration. Replace the plain `templates/page.php` to build the new design. No theme engine is introduced.
 
-## İçeriği mevcut tablolara bağlama
+## Map content to existing tables
 
-| İhtiyaç | Mevcut yapı | Dikkat |
+| Requirement | Existing structure | Contract |
 |---|---|---|
-| Kurumsal sayfa | `pages` + `page_lang` | Genel ayarlar ile dil içeriği ayrı; aktif ve silinmemiş kayıtları sunun. |
-| Hizmet/proje/ekip gibi tekrar eden kartlar | `datatypes` + `datas` + `data_lang` | Veri tipini kendi seed'inizde tanımlayın; Personal'ın sayısal tip ID'lerini kopyalamayın. |
-| Hiyerarşi/kategoriler | `cats`, `datas.cat_id` | Kategori varsayılanı `cats.template_id`, kayıt istisnası `datas.template_id`. |
-| Menü | `menutypes` + `menus` + `menu_lang` | İzinli URL şemaları; sıralama, aktiflik ve soft-delete korunur. |
-| Site adı, iletişim ve alt bilgi | `variables` + `variable_lang` | Anahtarlar sabit, değerler panelden; metinleri uygun bağlamda kodlayın. |
-| Medya | `uploads/files/{kaynak}/{id}` | Yeni kaydı önce kaydedin; dosya seçici yalnız o kaydın klasörünü açar. |
+| Corporate page | `pages` + `page_lang` | Separate general settings from translated content; publish only active, non-deleted records. |
+| Repeated services/projects/team cards | `datatypes` + `datas` + `data_lang` | Define types in the new site's seed; do not copy Personal's numeric type IDs. |
+| Hierarchy/categories | `cats`, `datas.cat_id` | Category default: `cats.template_id`; record override: `datas.template_id`. |
+| Navigation | `menutypes` + `menus` + `menu_lang` | Allowlisted URL schemes; preserve ordering, active status, and soft deletion. |
+| Site name, contact details, footer | `variables` + `variable_lang` | Stable keys, panel-managed values, context-appropriate encoding. |
+| Media | `uploads/files/{resource}/{id}` | Save a new record first; the picker opens only that record's folder. |
 
-`sitePage($slug)`, `siteRecords($typeSlug)`, `setting($key)` ve `siteRows($sql,$params)` yardımcılarının yeri `app/bootstrap.php`. Mevcut yardımcıların varsayılan ziyaretçi dili Türkçe (`lang_id=1`); farklı dil rotaları ayrıca tanımlanır. Çevirinin boş alanları genel değere düşer. HTML metin/attribute `e()`, zengin HTML `panelRichHtml()` ile sunulur.
+The helpers `sitePage($slug)`, `siteRecords($typeSlug)`, `setting($key)`, and `siteRows($sql,$params)` are in `app/bootstrap.php`. Their default visitor language is Turkish (`lang_id=1`); additional language routes must be implemented separately. Empty translation fields fall back to general values. Use `e()` for HTML text/attributes and `panelRichHtml()` for rich HTML.
 
-## AI ile yeni site yaparken
+## Working with an AI agent
 
-Yeni projedeki ajana şu kapsamı vermek yeterli bir başlangıçtır:
+The following brief is a useful starting point in the new repository:
 
-> Önce AGENTS.md, docs/mimari.md ve docs/yeni-site.md oku. Bu repoda [site türü] için [tasarım referansı] ile bir site oluştur. Mevcut CMS/SQLite/medya güvenliğini koru. Siteye özel HTML/PHP/CSS/JS'i ön yüzde tut. İçerikleri pages/datas/variables ve çevirilerden besle. Gereken CREATE ve seed SQL'i kaydet. Yalnız ilgili dosyaları incele; vendorları değiştirme ve başka repoya yazma.
+> Read AGENTS.md, docs/mimari.md, and docs/yeni-site.md first. Build a [website type] using [design reference] in this repository. Preserve the existing CMS, SQLite, and media security contracts. Keep site-specific HTML/PHP/CSS/JS in the frontend. Load content from pages/datas/variables and their translations. Save the required CREATE and seed SQL. Inspect the files relevant to the task; do not modify vendor sources or write to other repositories.
 
-Bu rehber uygulama ayrıntılarını hiç incelememe sözü değildir. Ajan, dokunduğu davranışın çağrılarını ve testlerini kontrol eder; veritabanı/rol/medya değişirse ilgili çekirdek dosyaları da okur. Yeni projedeki kararları kendi AGENTS/README dosyasına kaydeder.
+The guides do not replace implementation review. The agent must inspect callers and tests for the behavior it changes, and read relevant core files when touching database, role, or media behavior. Record new project decisions in that project's AGENTS/README files.
 
-## Referans Personal örneği
+## The Personal reference example
 
-Bu deponun mevcut `index.php`, `templates/pages/`, `templates/partials/`, `css/`, `assets/` ve `database/seed.sql` dosyaları çalışan örnektir; taşınmadı/silinmedi. `php tools/install.php` referans depoda hâlâ demo kurar; mevcut DB'yi ezmez. Aynı kaynakta farklı bir dosyada temiz DB denemek için `PANEL_DB_FILE` ayarlayıp `--profile=starter --admin-email=...` kullanabilirsiniz; mevcut Personal ön yüzü otomatik yeni bir tema seçmez. Yeni site için önerilen yol oluşturma komutudur.
+The existing `index.php`, `templates/pages/`, `templates/partials/`, `css/`, `assets/`, and `database/seed.sql` remain the working example in this repository; they were not moved or removed. Running `php tools/install.php` here still installs the demo and refuses to overwrite an existing database. To try a clean database in a different file within the reference repository, set `PANEL_DB_FILE` and use `--profile=starter --admin-email=...`; the Personal frontend does not automatically switch themes. The project-generation command is the recommended route for a new site.
 
-## Güvenlik ve üretim sınırı
+## Security and production boundary
 
-Yeni kopya da loopback erişim sınırı, parola/CSRF/rol/alan/medya korumalarıyla gelir. Bu kopyalama işlemi üretim dağıtımı değildir; CAPTCHA, dış erişim, SMTP, sunucu yönlendirmeleri, kalıcı yedekler ve TLS ayrıca değerlendirilir. Sırlar `config/config.runtime.php`, runtime DB/oturum/loglar `storage/` içindedir ve Git/HTTP dışında kalır. Başka sitenin config veya upload dizinini kopyalamayın.
+Generated projects retain loopback restrictions and password/CSRF/role/field/media protections. Generating a project is not production deployment. Assess CAPTCHA, external access, SMTP, server routing, persistent backups, and TLS separately. Secrets belong in `config/config.runtime.php`; runtime databases, sessions, and logs belong in `storage/`, outside Git and HTTP access. Never copy another site's configuration or upload directory.

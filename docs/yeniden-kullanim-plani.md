@@ -1,7 +1,7 @@
-# Yeniden kullanım
+# Reuse implementation plan
 
-- [x] Personal örneğini koru; boş başlangıç seed verilerini ayrı tut.
-- [x] Kurulum profili ve kurulum adı/DB/oturum ayarlarını ayır; mevcut demoyu değiştirme.
-- [x] Yalnız izlenen çekirdek dosyaları yeni hedefe kopyalayan, üzerine yazmayan komut oluştur.
-- [x] Yeni site/geliştirici ve AI okuma rehberlerini kaydet.
-- [x] Aynı HTTP süitinde temiz kurulum, yetkilendirme ve içerik akışını doğrula; demo DB özetini koru.
+- [x] Preserve the Personal example and keep the clean starter seed separate.
+- [x] Separate installation profiles, site names, database paths, and session settings without changing the live demo.
+- [x] Add a command that copies only tracked core files to a new destination and never overwrites an existing target.
+- [x] Save the new-site developer guide and targeted AI reading map.
+- [x] Extend the existing HTTP suite to check clean installation, authorization, and content workflows; preserve the demo database hash.
