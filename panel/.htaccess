@@ -1,0 +1,7 @@
+RewriteEngine on
+RewriteRule ^(?:include|temp|plugins/htmlpurifier)(?:/|$) - [F,L,NC]
+RewriteRule ^plugins/util(?:/|$) - [F,L,NC]
+RewriteRule ^plugins/(?:[^/]+/)*(?:samples|examples|demos|tests?)(?:/|$) - [F,L,NC]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^.*$ /panel/index.php [L,QSA]

@@ -1,0 +1,1 @@
+<section class="py-5"><div class="container px-5 text-center"><h1 class="display-5 fw-bolder">Sayfa bulunamadı</h1><p>Aradığınız içerik kaldırılmış veya adresi değişmiş olabilir.</p><a class="btn btn-primary" href="/">Ana sayfaya dön</a></div></section>

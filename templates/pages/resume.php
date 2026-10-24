@@ -1,0 +1,7 @@
+<div class="container px-5 my-5"><div class="text-center mb-5"><h1 class="display-5 fw-bolder mb-0"><span class="text-gradient d-inline"><?=e($page['title'])?></span></h1></div><div class="row gx-5 justify-content-center"><div class="col-lg-11 col-xl-9 col-xxl-8">
+<?php foreach([['experience','Deneyim','text-primary'],['education','Eğitim','text-secondary']] as [$type,$label,$color]): ?>
+<section><div class="d-flex align-items-center justify-content-between mb-4 gap-3"><h2 class="<?=$color?> fw-bolder mb-0"><?=$label?></h2><?php if($type==='experience'):?><button class="btn btn-primary px-4 py-3 print-action" onclick="window.print()"><i class="bi bi-printer me-2" aria-hidden="true"></i>Özgeçmişi yazdır</button><?php endif ?></div>
+<?php foreach(siteRecords($type) as $record){require __DIR__.'/../partials/resume-card.php';} ?></section><?php endforeach ?>
+<section class="card shadow border-0 rounded-4 mb-5"><div class="card-body p-5"><?php foreach([['skills','Yetkinlikler','bi-tools'],['languages','Diller','bi-code-slash']] as [$type,$label,$icon]): ?>
+<div class="mb-4"><h2 class="fw-bolder fs-3 mb-4"><i class="bi <?=$icon?> text-primary me-2" aria-hidden="true"></i><span class="text-gradient"><?=$label?></span></h2><div class="row row-cols-1 row-cols-md-3 g-3"><?php foreach(siteRecords($type) as $record):?><div class="col"><div class="d-flex align-items-center bg-light rounded-4 p-3 h-100"><?=e($record['label'])?></div></div><?php endforeach ?></div></div><?php endforeach ?></div></section>
+</div></div></div>

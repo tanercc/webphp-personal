@@ -1,0 +1,3 @@
+</main><footer class="bg-white py-4 mt-auto"><div class="container px-5"><div class="row align-items-center justify-content-between flex-column flex-sm-row"><div class="col-auto"><div class="small m-0">© <?=date('Y')?> <?=e(setting('footer_text'))?></div></div><div class="col-auto"><a class="small" href="/privacy">Gizlilik</a><span class="mx-1">·</span><a class="small" href="/terms">Koşullar</a><span class="mx-1">·</span><a class="small" href="/contact">İletişim</a></div></div></div></footer>
+<script <?=scriptAttributes('/assets/vendor/bootstrap.bundle.min.js')?>></script><script <?=scriptAttributes('/js/scripts.js')?>></script>
+</body></html>

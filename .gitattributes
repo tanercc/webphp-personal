@@ -1,0 +1,7 @@
+*.php text eol=lf
+*.sql text eol=lf
+/panel/plugins/** -text -whitespace
+/css/** -text -whitespace
+/js/** -text -whitespace
+/assets/** -text
+/panel/js/pages/** -text -whitespace

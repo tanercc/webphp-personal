@@ -1,0 +1,63 @@
+.content-header.disable,
+.main-footer.disable,
+.card-header.disable {
+  position: relative;
+}
+
+.main-header.disable:after,
+.main-sidebar.disable:after,
+.content-header.disable:after,
+.main-footer.disable:after,
+.card-header.disable:after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 10;
+  cursor: default;
+  opacity: 0;
+}
+
+#sort-container .list-group-item {
+  padding-left: 1rem;
+}
+#sort-container .nested-sortable {
+  padding: .25rem;
+  border: 2px dashed #e5e5e5;
+  margin-top: .5rem;
+}
+#sort-container .list-group-item:before {
+  content: "\f0b2";
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-right: 1rem;
+  cursor: pointer;
+}
+
+.form-group img {
+	background-color: lightslategray;
+}
+
+.login-logo img {
+  max-width: 256px;
+  max-height: 128px;
+}
+
+.brand-image {
+  width: 33px !important;
+  height: 33px;
+  object-fit: contain;
+  object-position: center center;
+}
+
+.jsgrid-cell,
+.jsgrid-header-cell {
+    box-sizing: border-box;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}

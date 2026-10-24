@@ -1,0 +1,1 @@
+<section class="py-5"><div class="container px-5"><h1 class="display-5 fw-bolder mb-4"><?=e($page['title'])?></h1><?=panelRichHtml($page['content'])?></div></section>

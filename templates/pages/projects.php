@@ -1,0 +1,3 @@
+<section class="py-5"><div class="container px-5 mb-5"><div class="text-center mb-5"><h1 class="display-5 fw-bolder mb-3"><span class="text-gradient d-inline"><?=e($page['title'])?></span></h1><div class="text-muted"><?=panelRichHtml($page['content'])?></div></div><div class="row gx-5 justify-content-center"><div class="col-lg-11 col-xl-9 col-xxl-8">
+<?php $records=siteRecords('projects');foreach($records as $record){require __DIR__.'/../partials/project-card.php';}if(!$records):?><p class="text-center text-muted">Yeni çalışmalar yakında burada.</p><?php endif ?>
+</div></div></div></section><?php require __DIR__.'/../partials/cta.php'; ?>

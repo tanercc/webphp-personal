@@ -1,0 +1,52 @@
+[
+  {
+    "file": "assets/vendor/bootstrap.bundle.min.js",
+    "source": "https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js",
+    "sha256": "9520018fa5d81f4e4dc9d06afb576f90cbbaba209cfcc6cb60e1464647f7890b"
+  },
+  {
+    "file": "assets/vendor/bootstrap-LICENSE",
+    "source": "https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/LICENSE",
+    "sha256": "53d2513c8df48a817d70537cc906b8e9c7bf2513328ff66847894773e615b37e"
+  },
+  {
+    "file": "assets/vendor/bootstrap-icons.css",
+    "source": "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css",
+    "sha256": "af35cc6aba34e5005de77099dfa72d4c1a7715d28ddcec343f48031dc8cb08bc"
+  },
+  {
+    "file": "assets/vendor/fonts/bootstrap-icons.woff2",
+    "source": "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/fonts/bootstrap-icons.woff2",
+    "sha256": "c874e14c63db86c4c5318c77cb557fce7036645edc7d690dcc1d23b389631b13"
+  },
+  {
+    "file": "assets/vendor/fonts/bootstrap-icons.woff",
+    "source": "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/fonts/bootstrap-icons.woff",
+    "sha256": "92f8082bf5dbde1259e70088da3556a768ffe955fe097a4214f8e2f1e8e9e2c8"
+  },
+  {
+    "file": "assets/vendor/bootstrap-icons-LICENSE",
+    "source": "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/LICENSE.md",
+    "sha256": "ae58b37f46d8c7eb680f0223a416a1d26f699a0968f537465256e9274e28da59"
+  },
+  {
+    "file": "css/styles.css",
+    "source": "https://github.com/startbootstrap/startbootstrap-personal/blob/main/dist/css/styles.css",
+    "sha256": "1950540bc5fb184ac4643f085259568dce1dce101448aad3c4e6c71d22301d85"
+  },
+  {
+    "file": "js/scripts.js",
+    "source": "https://github.com/startbootstrap/startbootstrap-personal/blob/main/dist/js/scripts.js",
+    "sha256": "37b318d99f41aaf48f89a7d87cde9d2d4bd49348947f50e6564af43b454c7537"
+  },
+  {
+    "file": "assets/profile.png",
+    "source": "https://github.com/startbootstrap/startbootstrap-personal/blob/main/dist/assets/profile.png",
+    "sha256": "7e250c47aa492a7edd3e3ebec8a983f2c6b0dc6a7ac6f47071cf13267ebf293d"
+  },
+  {
+    "file": "assets/favicon.ico",
+    "source": "https://github.com/startbootstrap/startbootstrap-personal/blob/main/dist/assets/favicon.ico",
+    "sha256": "8b1060f193768c55bc48dede8ba8da9be6c93f8e6dcae946e36f1a8956b7269b"
+  }
+]

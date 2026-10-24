@@ -1,0 +1,7 @@
+/storage/*
+!/storage/.gitkeep
+/config/config.runtime.php
+/uploads/files/*
+/uploads/thumbs/*
+/upstream/
+/.build*
