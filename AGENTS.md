@@ -17,3 +17,5 @@
 - `router.php` and Apache `.htaccess` protect config/database/storage/tools/templates/tests, starter source files, and vendor examples from HTTP access. The PHP development server requires the router. Nginx needs equivalent rules.
 - For PHP changes, lint the affected files and run `python tests/http-workflows.py` and `php tools/verify.php`. Write tests must use disposable SQLite databases. Do not add unnecessary one-off test files.
 - The public demo is Turkish by default. English translation records remain available in the panel; there is no separate public-language route. Generic CMS template choices do not automatically add Personal layouts; see the README content mapping.
+
+- Deferred work: AI content entry (shared operations, JSON import, local MCP) is planned in `docs/superpowers/plans/2026-10-25-ai-content-entry.md`. It is not implemented. Resume only when requested, in this repository; do not modify the ONS Makina project.
