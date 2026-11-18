@@ -54,7 +54,7 @@ try {
         if (in_array($method, ['PUT', 'POST'], true)) {
             if ($method === 'PUT' && $apiRequest !== 'self') { apiPositiveId($apiRequestId); }
             $id = $apiRequest === 'self' ? (int) $_SESSION['userId'] : $apiRequestId;
-            $apiInput = apiValidateFields($table, $apiInput, $columns, $method === 'PUT', $id);
+            $apiInput = apiValidateFields($apiRequest, $apiInput, $columns, $method === 'PUT', $id);
             if ($apiInput === []) { throw new RuntimeException('No writable fields', 422); }
         }
         if ($method === 'DELETE') { apiPositiveId($apiRequestId); }

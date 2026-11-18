@@ -169,6 +169,8 @@ with tempfile.TemporaryDirectory(prefix='personal-'+DRIVER+'-test-') as tmp, scr
    js(editor,'GET','/panel/api/users',status=403)
    js(editor,'GET','/panel/api/templates',status=403)
    # Logout stays a CSRF protected POST and invalidates API access.
+   r=js(admin,'PUT','/panel/api/self',{'name':'X','type_id':'1'},token=token,status=422);assert r=={'error':'Invalid field'},r
+   assert db('SELECT name FROM users WHERE email=?',('admin@personal.test',))[0]['name']!='X'
    js(admin,'PUT','/panel/api/self',{'name':'Self Edited','password':'SelfEdited!2026'},token=token);assert db('SELECT name FROM users WHERE email=?',('admin@personal.test',))[0]['name']=='Self Edited'
    relog=client();relog_token=csrf(request(relog,'GET','/panel/'));assert 'İçerikleri düzenleyin' in request(relog,'POST','/panel/',{'email':'admin@personal.test','password':'SelfEdited!2026','csrf_token':relog_token})
    request(admin,'GET','/panel/logout',status=403)

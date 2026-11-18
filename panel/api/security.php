@@ -134,7 +134,7 @@ function apiValidateFields(string $table, array $input, array $columns, bool $up
         }
         $fields[$key] = $value;
     }
-    return panelValidateWrite($table, $fields);
+    return panelValidateWrite($table === 'self' ? 'users' : $table, $fields);
 }
 
 function apiValidateOptions(string $table, array $options, array $columns): array
