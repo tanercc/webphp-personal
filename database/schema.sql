@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS "langs" ("id" INTEGER PRIMARY KEY AUTOINCREMENT, "nam
 CREATE TABLE IF NOT EXISTS "templates" ("id" INTEGER PRIMARY KEY AUTOINCREMENT, "name" varchar(100), "code" varchar(32), "is_active" tinyint DEFAULT 1, "deleted" tinyint DEFAULT 0, "sort_order" int DEFAULT 50, UNIQUE(code));
 CREATE TABLE IF NOT EXISTS "logs" ("id" INTEGER PRIMARY KEY AUTOINCREMENT, "task" text, "comment" text, "ip_no" varchar(45), "user_id" int, "created_at" timestamp);
 CREATE TABLE IF NOT EXISTS "errors" ("id" INTEGER PRIMARY KEY AUTOINCREMENT, "ip_no" varchar(50), "type" varchar(50), "code" varchar(50), "message" text, "file" varchar(255), "script" varchar(255), "line" varchar(50), "referer" varchar(255), "session" text, "post" text, "get" text, "created_at" timestamp);
-CREATE TABLE IF NOT EXISTS contact_limits (key TEXT PRIMARY KEY, window INTEGER NOT NULL, hits INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS "contact_limits" ("limit_key" varchar(64) PRIMARY KEY NOT NULL, "window_start" int NOT NULL, "hits" int NOT NULL);
 CREATE INDEX IF NOT EXISTS datas_public_type ON datas(type_id,is_active,deleted,sort_order);
 CREATE INDEX IF NOT EXISTS menus_public_type ON menus(type_id,is_active,deleted,sort_order);
 COMMIT;

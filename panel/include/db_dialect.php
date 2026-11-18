@@ -10,6 +10,8 @@ interface PanelDbDialect {
     public function tableExists(PDO $pdo, string $table): bool;
     public function upsertSql(string $table, array $columns, array $keyColumns): string;
     public function createTableSql(string $table, array $definition): array;
+    /** Column definition as used in CREATE TABLE and ALTER TABLE ... ADD COLUMN (without foreign-key clauses). */
+    public function columnSql(string $column, array $spec): string;
     public function describe(PDO $pdo): array;
     public function integrityErrors(PDO $pdo, array $schema): array;
 }
@@ -131,12 +133,7 @@ final class PanelSqliteDialect implements PanelDbDialect {
         $foreign = array_column($definition['foreign'] ?? [], null, 'column');
         $parts = [];
         foreach ($definition['columns'] as $column => $spec) {
-            panelDbValidateColumn($spec);
-            if ($spec['type'] === 'id') { $parts[] = $q($column).' INTEGER PRIMARY KEY AUTOINCREMENT'; continue; }
-            $sql = $q($column).' '.panelDbTypeString($spec);
-            if (!empty($spec['primary'])) { $sql .= ' NOT NULL PRIMARY KEY'; }
-            elseif (($spec['nullable'] ?? true) === false) { $sql .= ' NOT NULL'; }
-            if (array_key_exists('default', $spec) && $spec['default'] !== null) { $sql .= ' DEFAULT '.panelDbDefaultLiteral($spec['default']); }
+            $sql = $this->columnSql($column, $spec);
             if (isset($foreign[$column])) {
                 $fk = $foreign[$column];
                 $sql .= ' REFERENCES '.$q($fk['table']).'('.$q($fk['references'] ?? 'id').')'.panelDbOnDelete($fk);
@@ -149,6 +146,17 @@ final class PanelSqliteDialect implements PanelDbDialect {
             $statements[] = 'CREATE INDEX '.$q($index).' ON '.$q($table).'('.implode(',', array_map($q, $columns)).')';
         }
         return $statements;
+    }
+
+    public function columnSql(string $column, array $spec): string {
+        panelDbValidateColumn($spec);
+        $sql = '"'.panelDbIdentifier($column).'" ';
+        if ($spec['type'] === 'id') { return $sql.'INTEGER PRIMARY KEY AUTOINCREMENT'; }
+        $sql .= panelDbTypeString($spec);
+        if (!empty($spec['primary'])) { $sql .= ' NOT NULL PRIMARY KEY'; }
+        elseif (($spec['nullable'] ?? true) === false) { $sql .= ' NOT NULL'; }
+        if (array_key_exists('default', $spec) && $spec['default'] !== null) { $sql .= ' DEFAULT '.panelDbDefaultLiteral($spec['default']); }
+        return $sql;
     }
 
     public function describe(PDO $pdo): array {
@@ -265,17 +273,7 @@ final class PanelMysqlDialect implements PanelDbDialect {
     public function createTableSql(string $table, array $definition): array {
         $q = static fn (string $name): string => '`'.panelDbIdentifier($name).'`';
         $parts = [];
-        foreach ($definition['columns'] as $column => $spec) {
-            panelDbValidateColumn($spec);
-            if ($spec['type'] === 'id') { $parts[] = $q($column).' INT NOT NULL AUTO_INCREMENT PRIMARY KEY'; continue; }
-            $sql = $q($column).' '.(self::COMMENTED_TYPES[$spec['type']] ?? panelDbTypeString($spec));
-            if (!empty($spec['binary'])) { $sql .= ' CHARACTER SET utf8mb4 COLLATE utf8mb4_bin'; }
-            $sql .= (!empty($spec['primary']) || ($spec['nullable'] ?? true) === false) ? ' NOT NULL' : ' NULL';
-            if (array_key_exists('default', $spec) && $spec['default'] !== null) { $sql .= ' DEFAULT '.panelDbDefaultLiteral($spec['default']); }
-            if (!empty($spec['primary'])) { $sql .= ' PRIMARY KEY'; }
-            if (isset(self::COMMENTED_TYPES[$spec['type']])) { $sql .= " COMMENT 'cms:".$spec['type']."'"; }
-            $parts[] = $sql;
-        }
+        foreach ($definition['columns'] as $column => $spec) { $parts[] = $this->columnSql($column, $spec); }
         foreach ($definition['unique'] ?? [] as $columns) { $parts[] = 'UNIQUE KEY ('.implode(',', array_map($q, $columns)).')'; }
         foreach ($definition['foreign'] ?? [] as $fk) {
             $parts[] = 'CONSTRAINT '.$q($this->foreignKeyName($table, $fk['column'])).' FOREIGN KEY ('.$q($fk['column']).') REFERENCES '
@@ -286,6 +284,19 @@ final class PanelMysqlDialect implements PanelDbDialect {
             $statements[] = 'CREATE INDEX '.$q($index).' ON '.$q($table).' ('.implode(',', array_map($q, $columns)).')';
         }
         return $statements;
+    }
+
+    public function columnSql(string $column, array $spec): string {
+        panelDbValidateColumn($spec);
+        $sql = '`'.panelDbIdentifier($column).'` ';
+        if ($spec['type'] === 'id') { return $sql.'INT NOT NULL AUTO_INCREMENT PRIMARY KEY'; }
+        $sql .= self::COMMENTED_TYPES[$spec['type']] ?? panelDbTypeString($spec);
+        if (!empty($spec['binary'])) { $sql .= ' CHARACTER SET utf8mb4 COLLATE utf8mb4_bin'; }
+        $sql .= (!empty($spec['primary']) || ($spec['nullable'] ?? true) === false) ? ' NOT NULL' : ' NULL';
+        if (array_key_exists('default', $spec) && $spec['default'] !== null) { $sql .= ' DEFAULT '.panelDbDefaultLiteral($spec['default']); }
+        if (!empty($spec['primary'])) { $sql .= ' PRIMARY KEY'; }
+        if (isset(self::COMMENTED_TYPES[$spec['type']])) { $sql .= " COMMENT 'cms:".$spec['type']."'"; }
+        return $sql;
     }
 
     public function describe(PDO $pdo): array {
@@ -364,7 +375,8 @@ final class PanelMysqlDialect implements PanelDbDialect {
         return panelDbParseType($c['COLUMN_TYPE']);
     }
 
-    private function foreignKeyName(string $table, string $column): string { return panelDbIdentifier('fk_'.$table.'_'.$column); }
+    /** Constraint name used by createTableSql() and the migrator's ALTER TABLE ... ADD CONSTRAINT. */
+    public function foreignKeyName(string $table, string $column): string { return panelDbIdentifier('fk_'.$table.'_'.$column); }
 }
 
 /** Shared INSERT prefix, update assignments and the validated, zero-indexed key list for both upsert dialects. */

@@ -45,7 +45,7 @@ with tempfile.TemporaryDirectory(prefix='personal-sqlite-test-') as tmp:
     for url,sri in re.findall(r'(?:href|src)="([^\"]+)" integrity="(sha384-[^\"]+)"',html):
      asset=ROOT/url.split('?')[0].lstrip('/');assert sri=='sha384-'+base64.b64encode(hashlib.sha384(asset.read_bytes()).digest()).decode()
    request(guest,'GET','/missing-page',status=404)
-   for path in ['/storage/personal.sqlite','/database/schema.sql','/database/seed.sql','/config/config.php','/app/bootstrap.php','/templates/pages/home.php','/tools/install.php','/.git/config','/panel/include/database.php','/panel/include/db_dialect.php','/panel/plugins/util/pass.php','/panel/temp/Untitled-1.js','/panel/plugins/ckeditor/samples/index.html','/panel/plugins/filemanager/../../../storage/personal.sqlite']:
+   for path in ['/storage/personal.sqlite','/database/schema.sql','/database/seed.sql','/config/config.php','/app/bootstrap.php','/templates/pages/home.php','/tools/install.php','/.git/config','/panel/include/database.php','/panel/include/db_dialect.php','/panel/include/db_migrations.php','/tools/migrate.php','/database/migrations/0001_baseline.php','/tests/fixtures/legacy-schema.sql','/panel/plugins/util/pass.php','/panel/temp/Untitled-1.js','/panel/plugins/ckeditor/samples/index.html','/panel/plugins/filemanager/../../../storage/personal.sqlite']:
     request(guest,'GET',path,status=403)
    js(guest,'GET','/panel/api/pages',status=401)
    request(guest,'GET','/panel/plugins/filemanager/dialog.php?type=1',status=403)
