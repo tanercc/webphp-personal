@@ -13,7 +13,7 @@ cd ../new-site
 
 The command copies tracked core files from the working tree. Git is required to generate the project, but not to run the new PHP site. Track newly added core files before generating a copy. An existing destination is rejected even when empty. Destinations inside the source repository are also rejected. The new project does not inherit the source `.git` directory or commit history; initialize its repository as shown below.
 
-Included: the panel/packages, SQLite adapter, schema/clean seed, access restrictions and routing, plain PHP frontend, setup/verification tools, and developer guides. Excluded: the Personal design/images/portfolio, demo seed/account, runtime database, sessions/logs/uploads, private configuration, and source Git history. The source `config/config.runtime.php` is excluded even if tracked.
+Included: the panel/packages, database adapter (SQLite/MySQL), schema/clean seed, access restrictions and routing, plain PHP frontend, setup/verification tools, and developer guides. Excluded: the Personal design/images/portfolio, demo seed/account, runtime database, sessions/logs/uploads, private configuration, and source Git history. The source `config/config.runtime.php` is excluded even if tracked.
 
 Install without writing the password into command history:
 
@@ -42,7 +42,7 @@ git commit -m "Initialize standalone CMS site"
 - `css/`, `js/`, `assets/`: files belonging to the new site. Use the existing helpers to generate CSS/JS SRI and content versions.
 - `config/site.php`: site name, installation profile, database path, and independent session name.
 - `config/panel-fields.php`: custom column labels for data types, when needed.
-- `database/schema.sql`: tables/indexes; `database/seed-base.sql`: neutral setup records. Keep any site-specific content seed separate and free of secrets.
+- `database/schema.php`: the single schema definition; `database/seed-base.php`: neutral setup records. Keep any site-specific content seed separate and free of secrets. Changing the model means editing `schema.php` and reinstalling a fresh database; there are no migrations. Driver and MySQL settings: `config/site.php` `database` plus `PANEL_DB_*` env overrides (MySQL password only via env or `config/config.runtime.php`; MySQL >= 8.0.19, MariaDB unsupported).
 - `panel/`: the shared role/CRUD/form/media core. Do not change it merely to implement a new design.
 
 Generated projects contain none of Personal's `templates/pages/`, CSS, images, or paid form integration. Replace the plain `templates/page.php` to build the new design. No theme engine is introduced.
@@ -64,13 +64,13 @@ The helpers `sitePage($slug)`, `siteRecords($typeSlug)`, `setting($key)`, and `s
 
 The following brief is a useful starting point in the new repository:
 
-> Read AGENTS.md, docs/mimari.md, and docs/yeni-site.md first. Build a [website type] using [design reference] in this repository. Preserve the existing CMS, SQLite, and media security contracts. Keep site-specific HTML/PHP/CSS/JS in the frontend. Load content from pages/datas/variables and their translations. Save the required CREATE and seed SQL. Inspect the files relevant to the task; do not modify vendor sources or write to other repositories.
+> Read AGENTS.md, docs/mimari.md, and docs/yeni-site.md first. Build a [website type] using [design reference] in this repository. Preserve the existing CMS, database, and media security contracts. Keep site-specific HTML/PHP/CSS/JS in the frontend. Load content from pages/datas/variables and their translations. Save the required schema (`schema.php`) and seed changes. Inspect the files relevant to the task; do not modify vendor sources or write to other repositories.
 
 The guides do not replace implementation review. The agent must inspect callers and tests for the behavior it changes, and read relevant core files when touching database, role, or media behavior. Record new project decisions in that project's AGENTS/README files.
 
 ## The Personal reference example
 
-The existing `index.php`, `templates/pages/`, `templates/partials/`, `css/`, `assets/`, and `database/seed.sql` remain the working example in this repository; they were not moved or removed. Running `php tools/install.php` here still installs the demo and refuses to overwrite an existing database. To try a clean database in a different file within the reference repository, set `PANEL_DB_FILE` and use `--profile=starter --admin-email=...`; the Personal frontend does not automatically switch themes. The project-generation command is the recommended route for a new site.
+The existing `index.php`, `templates/pages/`, `templates/partials/`, `css/`, `assets/`, and `database/seed.php` remain the working example in this repository; they were not moved or removed. Running `php tools/install.php` here still installs the demo and refuses to overwrite an existing database. To try a clean database in a different file within the reference repository, set `PANEL_DB_FILE` and use `--profile=starter --admin-email=...`; the Personal frontend does not automatically switch themes. The project-generation command is the recommended route for a new site.
 
 ## Security and production boundary
 

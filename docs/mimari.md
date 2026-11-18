@@ -4,7 +4,7 @@
 
 1. `AGENTS.md`: the repository's scope and contracts to preserve.
 2. `README.md`, `config/site.php`: the example/installation profile, database, and startup instructions.
-3. `database/schema.sql` and the seed entries relevant to the task.
+3. `database/schema.php` and the seed entries relevant to the task.
 4. The entry point below that matches the task. Do not read all vendor files indiscriminately.
 
 | Task | Start with these files / symbols |
@@ -12,7 +12,7 @@
 | Frontend routing and pages | `index.php`, `templates/`; Personal uses `templates/pages/` + `partials/` |
 | Site data | `app/bootstrap.php`: `sitePage`, `siteRecords`, `setting`, `siteRows` |
 | Installation and clean copies | `tools/install.php`, `tools/create-site.php`, `config/site.php`, `starter/` |
-| Database connection / metadata | `panel/include/sqlite.php`: `PanelSqliteConnection`, `columns`, `execute_query` |
+| Database connection / metadata | `panel/include/database.php`: `PanelDbConnection`, `columns`, `execute_query`; `db_dialect.php` (engine differences), `db_schema.php` (schema, `panelValidateWrite`), `db_install.php` (create tables) |
 | Legacy panel helpers | `panel/include/db_functions.php`: `sqlQuery`, `dbGetTableData`, `dbGetTableFields` |
 | API routing / CSRF | `panel/api/index.php` |
 | API permissions and fields | `panel/api/security.php`: `apiAuthorize`, `apiWritableFields`, `apiValidateFields` |
@@ -28,10 +28,14 @@
 
 - Visitor: router/rewrite → `index.php` → `app/bootstrap.php` → parameterized read → allowed PHP template.
 - Panel: `panel/index.php` → configuration/database/session/role → list or record form.
-- API: `panel/api/index.php` → session/role/method/CSRF → table/field/filter permissions → SQLite adapter → JSON.
+- API: `panel/api/index.php` → session/role/method/CSRF → table/field/filter permissions → database adapter → JSON.
 - Media: Filemanager entry points → shared session/role/CSRF → `RF.subfolder` resource/record boundary → file operation.
 
-Panel forms use schema column types and defaults. The SQLite adapter covers only the existing `SHOW COLUMNS` / legacy result interface currently used by the application; it is not a general MySQL compatibility layer. Check SQLite support and allowlists together when introducing a query.
+Panel forms use column types and defaults from `schema.php`. The adapter covers only the legacy result interface currently used by the application. Writes from panel/API/contact are validated against `schema.php` (`panelValidateWrite`, 422 `Invalid value: <column>`) on both engines. Driver selection: `config/site.php` `database` plus `PANEL_DB_*` env overrides; the MySQL password only via env or `config/config.runtime.php`. MySQL >= 8.0.19 (utf8mb4, InnoDB, `utf8mb4_bin` on slug/code/email/limit_key); MariaDB unsupported.
+
+Portable SQL in application code: backtick identifiers, single-quoted strings, `LIMIT n OFFSET m`, `COALESCE`, `LIKE ? ESCAPE '!'`. Do not use `IFNULL`, `||`, `GROUP_CONCAT`, `ON CONFLICT`, `ON DUPLICATE KEY`, `PRAGMA`, `information_schema`, `sqlite_master`, `SHOW`, `SQL_CALC_FOUND_ROWS`, `FOUND_ROWS`, `INSERT ... SET`, or SQL date functions. Engine differences live only in `panel/include/db_dialect.php`. `affected_rows` counts changed rows on MySQL but matched rows on SQLite, and `insert_id` is meaningful only right after an INSERT; rely on neither otherwise. Check both engines and allowlists together when introducing a query.
+
+Schema workflow: `database/schema.php` is the only definition; `tools/install.php` builds a fresh database (SQLite temp file + exclusive publish; MySQL empty database, install lock, failed run drops only its own tables); `tools/verify.php` checks the structure equals `schema.php`. There are no migrations: edit `schema.php` and the seed, then reinstall; a site with real data needs a separate plan.
 
 ## Stable contracts
 
@@ -47,9 +51,9 @@ Panel forms use schema column types and defaults. The SQLite adapter covers only
 ## Verification by change type
 
 - PHP changes: run `php -d error_reporting=32767 -l ...` on affected files.
-- Panel/API/database/setup changes: run `python tests/http-workflows.py` in this reference repository. One suite checks both the demo and a generated clean site with separate SQLite databases, sessions, and servers.
+- Panel/API/database/setup changes: run `python tests/http-workflows.py` in this reference repository. One suite checks both the demo and a generated clean site with separate disposable databases, sessions, and servers. For DB-touching changes also run `python tests/http-workflows.py --driver mysql` (`PANEL_TEST_MYSQL_HOST/PORT/USER/PASSWORD`; creates and drops `cms_test_<hex>`) and `php tests/db-contract.php --driver=both`; if MySQL is unavailable, say so in the report.
 - Package/setup changes: run `php tools/verify.php`; it refuses a missing database without creating one.
-- Generated projects do not receive the Personal-specific HTTP suite. Add project-appropriate tests with a separate database; baseline package/SQLite verification is included.
+- Generated projects do not receive the Personal-specific HTTP suite. Add project-appropriate tests with a separate database; baseline package/database verification is included.
 
 Read missing details from the relevant files. There is no need to scan the entire source tree on every task or rely on memory of a previous conversation.
 
