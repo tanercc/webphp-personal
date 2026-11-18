@@ -7,8 +7,8 @@ defined('BASEPATH') or exit('No direct script access allowed');
 //=======================================================
 // DB connections
 //=======================================================
-require_once __DIR__.'/sqlite.php';
-$conn=panelSqliteConnection();
+require_once __DIR__.'/database.php';
+$conn=panelDatabaseConnection();
 
 // mysqli query
 //=======================================================
@@ -246,24 +246,25 @@ function dbGetTableData($table, $fields = null, $options = [])
     $sqlstring .= ",(SELECT `$catTable`.`name` FROM `$catTable` WHERE `$catTable`.`id`=`$table`.`cat_id`) AS `type`";
   }
 
-  $sqlstring .= " FROM `$table`
+  // FROM/WHERE is kept separate so the count never wraps the select list (MySQL rejects duplicate derived-table columns).
+  $fromWhere = " FROM `$table`
     WHERE `$table`.`deleted`=? ";
 
   if ($options && is_array($options)) {
     foreach ($options as $key => $value) {
       if (!is_scalar($value) && $value !== null) { throw new InvalidArgumentException("Invalid filter value"); }
       if ($key == 'q') {
-        $sqlstring .= " AND `$table`.`name` LIKE ? ESCAPE '!'";
+        $fromWhere .= " AND `$table`.`name` LIKE ? ESCAPE '!'";
         $params[] = dbLikePrefix((string) $value);
       } else if (in_array($key, array_merge(["id"], $tableFields), true)) {
-        $sqlstring .= " AND `$table`.`$key`=?";
+        $fromWhere .= " AND `$table`.`$key`=?";
         $params[] = $value;
       } else { throw new InvalidArgumentException("Unknown filter field"); }
     }
   }
 
-  $countSql = "SELECT COUNT(*) FROM (" . $sqlstring . ") counted";
-  $GLOBALS['dbFoundRows'] = (int) sqlQuery($countSql, $params)->fetch_row()[0];
+  $GLOBALS['dbFoundRows'] = (int) sqlQuery("SELECT COUNT(*)" . $fromWhere, $params)->fetch_row()[0];
+  $sqlstring .= $fromWhere;
   $sqlstring .= " ORDER BY `$table`.`$sortField` $sortOrder, `$table`.`id`";
 
   $sqlstring .= dbSqlLimit($pageIndex, $pageSize);

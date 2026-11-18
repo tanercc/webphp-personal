@@ -3,6 +3,7 @@ if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 define('BASEPATH', '/');
 $root = dirname(__DIR__);
 $installation = require $root . '/config/site.php';
+require $root . '/panel/include/database.php';
 $options = [];
 foreach (array_slice($argv, 1) as $argument) {
     if ($argument === '--help') {
@@ -19,7 +20,7 @@ $profile = $options['profile'] ?? $installation['profile'];
 if (!in_array($profile, $installation['allowed_profiles'], true)) {
     fwrite(STDERR, "Unsupported installation profile.\n"); exit(1);
 }
-$path = getenv('PANEL_DB_FILE') ?: getenv('PERSONAL_DB_FILE') ?: $installation['database_file'];
+$path = panelDatabaseConfig()['file'] ?? '';
 if (file_exists($path) || is_link($path)) {
     fwrite(STDERR, "Database exists; refusing to overwrite. Choose a new PANEL_DB_FILE.\n"); exit(1);
 }

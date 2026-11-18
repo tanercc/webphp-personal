@@ -5,7 +5,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
  */
 interface PanelDbDialect {
     public function name(): string;
-    public function connect(array $config): PDO;
+    public function connect(#[\SensitiveParameter] array $config): PDO;
     public function columns(PDO $pdo, string $table): array;
     public function tableExists(PDO $pdo, string $table): bool;
     public function upsertSql(string $table, array $columns, array $keyColumns): string;
@@ -87,10 +87,12 @@ function panelDbValidateColumn(array $spec): void {
 final class PanelSqliteDialect implements PanelDbDialect {
     public function name(): string { return 'sqlite'; }
 
-    public function connect(array $config): PDO {
+    public function connect(#[\SensitiveParameter] array $config): PDO {
         try {
             $file = (string)($config['file'] ?? '');
             if ($file === '' || is_dir($file)) { throw new RuntimeException('Invalid file'); }
+            // Only installers pass `create`; a runtime connection must never create an empty database.
+            if (($config['create'] ?? false) !== true && !is_file($file)) { throw new RuntimeException('Missing file'); }
             $pdo = new PDO('sqlite:'.$file, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
             $pdo->exec('PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;');
             $pdo->query('SELECT COUNT(*) FROM sqlite_master')->fetchColumn();
@@ -119,7 +121,7 @@ final class PanelSqliteDialect implements PanelDbDialect {
     }
 
     public function upsertSql(string $table, array $columns, array $keyColumns): string {
-        [$insert, $set] = panelDbUpsertParts($table, $columns, $keyColumns, static fn (string $c): string => '`'.$c.'`=excluded.`'.$c.'`');
+        [$insert, $set, $keyColumns] = panelDbUpsertParts($table, $columns, $keyColumns, static fn (string $c): string => '`'.$c.'`=excluded.`'.$c.'`');
         $keys = implode(',', array_map(static fn (string $c): string => '`'.$c.'`', $keyColumns));
         return $insert.' ON CONFLICT ('.$keys.') '.($set ? 'DO UPDATE SET '.implode(',', $set) : 'DO NOTHING');
     }
@@ -214,7 +216,7 @@ final class PanelMysqlDialect implements PanelDbDialect {
 
     public function name(): string { return 'mysql'; }
 
-    public function connect(array $config): PDO {
+    public function connect(#[\SensitiveParameter] array $config): PDO {
         try {
             $charset = (string)($config['charset'] ?? 'utf8mb4');
             if ($charset !== 'utf8mb4') { throw new RuntimeException('Unsupported charset'); }
@@ -255,7 +257,7 @@ final class PanelMysqlDialect implements PanelDbDialect {
     }
 
     public function upsertSql(string $table, array $columns, array $keyColumns): string {
-        [$insert, $set] = panelDbUpsertParts($table, $columns, $keyColumns, static fn (string $c): string => '`'.$c.'`=new.`'.$c.'`');
+        [$insert, $set, $keyColumns] = panelDbUpsertParts($table, $columns, $keyColumns, static fn (string $c): string => '`'.$c.'`=new.`'.$c.'`');
         if (!$set) { $set = ['`'.$keyColumns[0].'`=new.`'.$keyColumns[0].'`']; }
         return $insert.' AS new ON DUPLICATE KEY UPDATE '.implode(',', $set);
     }
@@ -365,7 +367,7 @@ final class PanelMysqlDialect implements PanelDbDialect {
     private function foreignKeyName(string $table, string $column): string { return panelDbIdentifier('fk_'.$table.'_'.$column); }
 }
 
-/** Shared INSERT prefix and update assignments for both upsert dialects. */
+/** Shared INSERT prefix, update assignments and the validated, zero-indexed key list for both upsert dialects. */
 function panelDbUpsertParts(string $table, array $columns, array $keyColumns, callable $assign): array {
     $columns = array_map(static fn ($c): string => panelDbIdentifier((string)$c), array_values($columns));
     $keyColumns = array_map(static fn ($c): string => panelDbIdentifier((string)$c), array_values($keyColumns));
@@ -374,7 +376,7 @@ function panelDbUpsertParts(string $table, array $columns, array $keyColumns, ca
         .implode(',', array_fill(0, count($columns), '?')).')';
     $set = [];
     foreach ($columns as $column) { if (!in_array($column, $keyColumns, true)) { $set[] = $assign($column); } }
-    return [$insert, $set];
+    return [$insert, $set, $keyColumns];
 }
 
 function panelDbOnDelete(array $fk): string {

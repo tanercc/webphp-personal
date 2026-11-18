@@ -5,7 +5,7 @@
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 define('BASEPATH', '/');
 $root = dirname(__DIR__);
-require $root.'/panel/include/db_dialect.php';
+require $root.'/panel/include/database.php';
 
 $options = getopt('', ['driver:']);
 $driver = $options['driver'] ?? 'sqlite';
@@ -72,7 +72,61 @@ function contractRun(PanelDbDialect $dialect, array $config, array $schema): arr
         $pdo->prepare($sql)->execute([$key, 100, 2]);
         $rows = $pdo->query('SELECT `limit_key`, `hits` FROM `contact_limits`')->fetchAll(PDO::FETCH_ASSOC);
         contractAssert(count($rows) === 1 && (int)$rows[0]['hits'] === 2, 'upsert did not update the existing row');
+        // Key-only upsert with a re-indexed key list must still produce valid SQL and leave the row alone.
+        $pdo->exec("INSERT INTO `pages` (`name`) VALUES ('upsert')");
+        $id = (int)$pdo->lastInsertId();
+        $pdo->prepare($dialect->upsertSql('pages', ['id'], [5 => 'id']))->execute([$id]);
+        $rows = $pdo->query('SELECT `name` FROM `pages`')->fetchAll(PDO::FETCH_ASSOC);
+        contractAssert(count($rows) === 1 && $rows[0]['name'] === 'upsert', 'key-only upsert changed the row');
+        $pdo->exec('DELETE FROM `pages`');
     };
+    $checks['connection_contract'] = function () use ($dialect, $config): void {
+        $db = new PanelDbConnection($dialect, $config);
+        contractAssert($db->dialect() === $dialect && $db->pdo() instanceof PDO, 'connection accessors');
+        $insert = 'INSERT INTO `pages` (`name`, `slug`) VALUES (?, ?)';
+        contractAssert($db->execute_query($insert, ['Contract', 'connection-contract']) === true, 'insert result');
+        $id = $db->insert_id;
+        contractAssert($id > 0, 'insert_id after insert');
+        $db->execute_query('UPDATE `pages` SET `name`=? WHERE `id`=?', ['Changed', $id]);
+        contractAssert($db->affected_rows === 1, 'affected_rows after update');
+        $statement = $db->prepare('SELECT `id`, `name` FROM `pages` WHERE `id`=?');
+        $statement->bind_param('i', $id);
+        $statement->execute();
+        $row = $statement->get_result()->fetch_assoc();
+        contractAssert(is_array($row) && (int)$row['id'] === $id && $row['name'] === 'Changed', 'prepared select');
+        $db->begin_transaction();
+        $db->execute_query($insert, ['Rolled back', 'connection-rollback']);
+        $db->rollback();
+        $count = $db->execute_query('SELECT COUNT(*) FROM `pages` WHERE `slug`=?', ['connection-rollback'])->fetch_row()[0];
+        contractAssert((int)$count === 0, 'rollback kept the insert');
+        $db->upsert('contact_limits', ['limit_key' => 'connection', 'window_start' => 1, 'hits' => 1], ['limit_key']);
+        $db->upsert('contact_limits', ['limit_key' => 'connection', 'window_start' => 1, 'hits' => 3], ['limit_key']);
+        $hits = $db->query("SELECT `hits` FROM `contact_limits` WHERE `limit_key`='connection'")->fetch_all();
+        contractAssert(count($hits) === 1 && (int)$hits[0]['hits'] === 3, 'connection upsert');
+        contractAssert($db->tableExists('pages') && $db->columns('pages') === $dialect->columns($db->pdo(), 'pages'), 'connection metadata');
+    };
+    if ($dialect->name() === 'sqlite') {
+        $checks['missing_sqlite_file'] = function (): void {
+            $missing = sys_get_temp_dir().DIRECTORY_SEPARATOR.'cms-missing-'.bin2hex(random_bytes(6)).'.sqlite';
+            $expect503 = static function (callable $connect, string $label): void {
+                try { $connect(); } catch (RuntimeException $e) {
+                    contractAssert($e->getCode() === 503 && $e->getMessage() === 'Database unavailable', $label.' failure leaks details');
+                    return;
+                }
+                throw new RuntimeException($label.' accepted a missing database file');
+            };
+            $saved = ['PANEL_DB_DRIVER' => getenv('PANEL_DB_DRIVER'), 'PANEL_DB_FILE' => getenv('PANEL_DB_FILE')];
+            putenv('PANEL_DB_DRIVER=sqlite');
+            putenv('PANEL_DB_FILE='.$missing);
+            try {
+                $expect503(static fn () => panelDbDialect('sqlite')->connect(['file' => $missing]), 'dialect connect');
+                $expect503(static fn () => panelDatabaseConnection(), 'panelDatabaseConnection()');
+            } finally {
+                foreach ($saved as $name => $value) { putenv($value === false ? $name : $name.'='.$value); }
+            }
+            contractAssert(!file_exists($missing), 'runtime connection created a database file');
+        };
+    }
     if ($dialect->name() === 'mysql') {
         $checks['binary_collation'] = function (PDO $pdo): void {
             $insert = $pdo->prepare('INSERT INTO `users` (`email`) VALUES (?)');

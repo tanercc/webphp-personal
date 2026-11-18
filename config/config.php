@@ -3,7 +3,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
 require_once __DIR__.'/../panel/include/exception.php';
 error_reporting(E_ALL); ini_set('display_errors','0'); date_default_timezone_set('Europe/Istanbul');
 $installation = require __DIR__.'/site.php';
-$databaseFile = $installation['database_file'];
 $maxlifetime=86400; $multilanguage=true; $panel_name=$installation['name'].' CMS '; $panel_logo='brand.svg';
 $recaptcha_key=$recaptcha_secret=''; $upload_folder='../uploads/files';
 if (is_file(__DIR__.'/config.runtime.php')) { require __DIR__.'/config.runtime.php'; }

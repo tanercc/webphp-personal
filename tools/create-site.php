@@ -79,7 +79,7 @@ try {
     $site = "<?php\ndefined('BASEPATH') or exit('No direct script access allowed');\nreturn [\n"
         . "    'name' => " . var_export($name, true) . ",\n"
         . "    'profile' => 'starter',\n    'allowed_profiles' => ['starter'],\n"
-        . "    'database_file' => dirname(__DIR__) . '/storage/site.sqlite',\n"
+        . "    'database' => ['driver' => 'sqlite', 'file' => dirname(__DIR__) . '/storage/site.sqlite'],\n"
         . "    'session_name' => 'CMS' . substr(hash('sha256', __DIR__), 0, 20),\n];\n";
     if (file_put_contents($target.'/config/site.php', $site) === false) { throw new RuntimeException('Cannot write installation config'); }
     $permissions = file_get_contents($target.'/panel/include/permissions.php');

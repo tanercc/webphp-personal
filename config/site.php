@@ -4,6 +4,6 @@ return [
     'name' => 'Personal',
     'profile' => 'demo',
     'allowed_profiles' => ['demo', 'starter'],
-    'database_file' => dirname(__DIR__) . '/storage/personal.sqlite',
+    'database' => ['driver' => 'sqlite', 'file' => dirname(__DIR__) . '/storage/personal.sqlite'],
     'session_name' => 'PERSONALCMS',
 ];

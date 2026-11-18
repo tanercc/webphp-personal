@@ -45,7 +45,7 @@ with tempfile.TemporaryDirectory(prefix='personal-sqlite-test-') as tmp:
     for url,sri in re.findall(r'(?:href|src)="([^\"]+)" integrity="(sha384-[^\"]+)"',html):
      asset=ROOT/url.split('?')[0].lstrip('/');assert sri=='sha384-'+base64.b64encode(hashlib.sha384(asset.read_bytes()).digest()).decode()
    request(guest,'GET','/missing-page',status=404)
-   for path in ['/storage/personal.sqlite','/database/schema.sql','/database/seed.sql','/config/config.php','/app/bootstrap.php','/templates/pages/home.php','/tools/install.php','/.git/config','/panel/include/sqlite.php','/panel/plugins/util/pass.php','/panel/temp/Untitled-1.js','/panel/plugins/ckeditor/samples/index.html','/panel/plugins/filemanager/../../../storage/personal.sqlite']:
+   for path in ['/storage/personal.sqlite','/database/schema.sql','/database/seed.sql','/config/config.php','/app/bootstrap.php','/templates/pages/home.php','/tools/install.php','/.git/config','/panel/include/database.php','/panel/include/db_dialect.php','/panel/plugins/util/pass.php','/panel/temp/Untitled-1.js','/panel/plugins/ckeditor/samples/index.html','/panel/plugins/filemanager/../../../storage/personal.sqlite']:
     request(guest,'GET',path,status=403)
    js(guest,'GET','/panel/api/pages',status=401)
    request(guest,'GET','/panel/plugins/filemanager/dialog.php?type=1',status=403)
@@ -72,7 +72,7 @@ with tempfile.TemporaryDirectory(prefix='personal-sqlite-test-') as tmp:
    assert js(admin,'GET','/panel/api/pages/'+str(rid))['name']==fields['name']
    js(admin,'PUT','/panel/api/pages/'+str(rid),{'name':'Updated','is_active':'0'},token=token)
    js(admin,'DELETE','/panel/api/pages/'+str(rid),token=token)
-   guarded=[f for d in ['app','panel/include','panel/api','templates'] for f in (ROOT/d).rglob('*.php') if f.name not in {'sqlite.php','database.php','db_dialect.php','db_migrations.php'} or d=='panel/api']+[ROOT/'index.php']
+   guarded=[f for d in ['app','panel/include','panel/api','templates'] for f in (ROOT/d).rglob('*.php') if f.name not in {'database.php','db_dialect.php','db_migrations.php'} or d=='panel/api']+[ROOT/'index.php']
    for f in guarded:
     text=f.read_text(encoding='utf-8')
     for pattern in NON_PORTABLE_SQL:assert not re.search(pattern,text,re.I),(f.name,pattern)

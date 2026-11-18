@@ -55,7 +55,7 @@ function panelAuthenticate(array $input, callable $captcha, callable $findUser, 
     return true;
 }
 
-function panelFindLoginUser(PanelSqliteConnection $db, string $email): ?array
+function panelFindLoginUser(PanelDbConnection $db, string $email): ?array
 {
     $statement = $db->prepare('SELECT u.id, u.name, u.password, u.image, u.is_active, u.deleted, t.slug AS type
         FROM users u INNER JOIN usertypes t ON t.id = u.type_id
