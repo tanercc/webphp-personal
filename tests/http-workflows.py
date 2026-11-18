@@ -141,7 +141,10 @@ with tempfile.TemporaryDirectory(prefix='personal-'+DRIVER+'-test-') as tmp, scr
    js(admin,'PUT','/panel/api/pages/1',{'name':'ş'*50},token=token);assert js(admin,'GET','/panel/api/pages/1')['name']=='ş'*50
    js(admin,'PUT','/panel/api/pages/1',{'type_id':'abc'},token=token,status=422)
    js(admin,'PUT','/panel/api/pages/1',{'type_id':''},token=token);assert db('SELECT type_id FROM pages WHERE id=1')[0]['type_id'] is None
-   js(admin,'PUT','/panel/api/lang',{'lang_table':'page_lang','id':lid,'title':'x'*256},token=token,status=422)
+   plid=db('SELECT id FROM page_lang WHERE row_id=1 AND lang_id=1')[0]['id']
+   js(admin,'PUT','/panel/api/lang',{'lang_table':'page_lang','id':plid,'title':'x'*256},token=token,status=422)
+   js(admin,'PUT','/panel/api/lang',{'lang_table':'page_lang','id':plid,'title':'y'*255},token=token);assert db('SELECT title FROM page_lang WHERE id=?',(plid,))[0]['title']=='y'*255
+
    js(admin,'PUT','/panel/api/cats/999',{'template_id':'999'},token=token,status=422)
    html=request(guest,'GET','/contact');contact_token=csrf(html)
    request(guest,'POST','/contact',{'name':'Test visitor','email':'visitor@example.test','message':'Synthetic contact message','csrf_token':'wrong'},status=403)
@@ -166,6 +169,8 @@ with tempfile.TemporaryDirectory(prefix='personal-'+DRIVER+'-test-') as tmp, scr
    js(editor,'GET','/panel/api/users',status=403)
    js(editor,'GET','/panel/api/templates',status=403)
    # Logout stays a CSRF protected POST and invalidates API access.
+   js(admin,'PUT','/panel/api/self',{'name':'Self Edited','password':'SelfEdited!2026'},token=token);assert db('SELECT name FROM users WHERE email=?',('admin@personal.test',))[0]['name']=='Self Edited'
+   relog=client();relog_token=csrf(request(relog,'GET','/panel/'));assert 'İçerikleri düzenleyin' in request(relog,'POST','/panel/',{'email':'admin@personal.test','password':'SelfEdited!2026','csrf_token':relog_token})
    request(admin,'GET','/panel/logout',status=403)
    request(admin,'POST','/panel/logout',{'csrf_token':token})
    js(admin,'GET','/panel/api/pages',status=401)
