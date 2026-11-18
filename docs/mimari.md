@@ -21,7 +21,7 @@
 | Users / roles / sessions | `panel/include/login.php`, `login_security.php`, `permissions.php`, `session.php`, `csrf.php` |
 | Record-scoped file selection | `panel/include/media_access.php`, `panel/plugins/filemanager/config/config.php` |
 | Safe output | `panel/include/output.php`, `rich_html.php`; `e`, `panelHtml`, `panelRichHtml` |
-| HTTP access boundaries | `.htaccess`, `panel/.htaccess`, `router.php`, `uploads/.htaccess` |
+| HTTP access boundaries | `.htaccess`, `panel/.htaccess`, `panel/api/.htaccess`, `router.php`, `uploads/.htaccess` |
 | Package integrity | `panel/plugins/DEPENDENCIES.json`, `tools/verify.php` |
 
 ## Request flows

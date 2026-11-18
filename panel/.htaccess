@@ -1,5 +1,7 @@
 RewriteEngine on
-RewriteRule ^(?:include|temp|plugins/htmlpurifier)(?:/|$) - [F,L,NC]
+RewriteRule ^(?:include|sql|temp|plugins/htmlpurifier)(?:/|$) - [F,L,NC]
+# Mirror router.php: only the panel entry point and the file manager entry points execute PHP.
+RewriteRule ^(?!index\.php$|plugins/filemanager/(?:dialog|upload|execute|ajax_calls|force_download)\.php$).*\.(?:php[0-9]*|phtml|pht|phar)$ - [F,L,NC]
 RewriteRule ^plugins/util(?:/|$) - [F,L,NC]
 RewriteRule ^plugins/(?:[^/]+/)*(?:samples|examples|demos|tests?)(?:/|$) - [F,L,NC]
 RewriteCond %{REQUEST_FILENAME} !-f

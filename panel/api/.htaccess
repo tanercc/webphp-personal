@@ -1,4 +1,6 @@
 RewriteEngine on
+# Mirror router.php: API helpers are included by index.php and never requested directly.
+RewriteRule ^(?!index\.php$).*\.(?:php[0-9]*|phtml|pht|phar)$ - [F,L,NC]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^.*$ index.php [L,QSA]

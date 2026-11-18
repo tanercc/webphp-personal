@@ -3,7 +3,6 @@
 // Tum scriptler calismadan once BASEPATH kontrolu yapar
 //=======================================================
 defined('BASEPATH') or exit('No direct script access allowed');
-require_once __DIR__ . '/mailer.php';
 require_once __DIR__ . '/output.php';
 
 //=======================================================

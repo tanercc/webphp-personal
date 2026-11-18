@@ -76,7 +76,7 @@ The contact form uses server-side validation, CSRF, a honeypot, and an IP limit 
 
 ## ServBay
 
-Create a PHP site with this directory as its document root and select PHP 8.4; `webphp-personal.test` is one possible local hostname. Apache requires `mod_rewrite`, `mod_headers`, and `.htaccess` support. For Nginx, configure equivalent config/database/storage/tools/templates access restrictions and panel/API rewrites. Existing sites' ServBay settings are not modified. The ready-to-use preview runs on the PHP development server described above.
+Create a PHP site with this directory as its document root and select PHP 8.4; `webphp-personal.test` is one possible local hostname. Apache requires `mod_rewrite`, `mod_headers`, and `.htaccess` support. For Nginx, configure equivalent config/database/storage/tools/templates access restrictions, panel/API rewrites, and the panel PHP entry-point allowlist from `router.php`. Existing sites' ServBay settings are not modified. The ready-to-use preview runs on the PHP development server described above.
 
 ## Verification
 
