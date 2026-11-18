@@ -25,6 +25,10 @@ return [
         ['id' => 3, 'name' => 'Galeri', 'code' => 'masonry', 'sort_order' => 30],
         ['id' => 4, 'name' => 'Kategorili içerik', 'code' => 'category', 'sort_order' => 40],
     ],
+    // Contact inbox type: app/contact.php stores messages as datas.type_id = 6.
+    'datatypes' => [
+        ['id' => 6, 'name' => 'İletişim mesajları', 'slug' => 'messages', 'sort_order' => 60],
+    ],
     'pages' => [
         ['id' => 1, 'name' => 'Ana sayfa', 'slug' => 'home', 'type_id' => 1, 'sort_order' => 10],
     ],
