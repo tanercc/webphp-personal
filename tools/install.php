@@ -21,9 +21,9 @@ function installFail(string $message): never { fwrite(STDERR, $message . "\n"); 
 
 /** Creates the tables of database/schema.php, inserts the profile's seed rows (tables and columns allowlisted by the schema),
  * creates the starter administrator, then checks integrity and that the structure equals the definition. */
-function installBuild(PanelDbConnection $db, string $root, string $profile, array $installation, string $email, #[\SensitiveParameter] string $password): void {
+function installBuild(PanelDbConnection $db, string $root, string $profile, array $installation, string $email, #[\SensitiveParameter] string $password, ?array &$created = null): void {
     $schema = require $root . '/database/schema.php';
-    panelCreateSchema($db, $schema);
+    panelCreateSchema($db, $schema, $created);
     $seed = require $root . '/database/' . ($profile === 'demo' ? 'seed.php' : 'seed-base.php');
     $db->begin_transaction();
     try {
@@ -82,23 +82,28 @@ if ($config['driver'] === 'mysql') {
     }
     $dialect = $db->dialect();
     try {
+        // One installer per database: the lock is held from the emptiness check until this process exits.
+        $lock = $db->execute_query('SELECT GET_LOCK(?, 0) AS `locked`', ['cms_install_' . md5($config['name'])])->fetch_assoc()['locked'];
         $empty = $dialect->describe($db->pdo())['tables'] === [];
     } catch (Throwable) {
         installFail('Database unavailable; nothing was changed.');
     }
+    if ((int)$lock !== 1) { installFail('Another installation is running for this database; nothing was changed.'); }
     if (!$empty) { installFail('Database is not empty; refusing to install.'); }
+    $created = [];
     try {
-        installBuild($db, $root, $profile, $installation, $email, $password);
+        installBuild($db, $root, $profile, $installation, $email, $password, $created);
         if ($profile === 'demo') { require __DIR__ . '/seed-media.php'; }
     } catch (Throwable) {
-        // The database was empty before this run, so the schema's tables now in it were created by this run.
+        // Drop exactly the tables this run created; anything else in the database is left alone.
         try {
             $db->rollback();
-            $defined = array_keys((require $root . '/database/schema.php')['tables']);
-            $created = array_intersect(array_keys($dialect->describe($db->pdo())['tables']), $defined);
             $db->pdo()->exec('SET FOREIGN_KEY_CHECKS=0');
-            foreach ($created as $table) { $db->pdo()->exec('DROP TABLE IF EXISTS `' . panelDbIdentifier($table) . '`'); }
-            $db->pdo()->exec('SET FOREIGN_KEY_CHECKS=1');
+            try {
+                foreach (array_reverse($created) as $table) { $db->pdo()->exec('DROP TABLE `' . panelDbIdentifier($table) . '`'); }
+            } finally {
+                $db->pdo()->exec('SET FOREIGN_KEY_CHECKS=1');
+            }
         } catch (Throwable) {
             fwrite(STDERR, "Removing the partially created tables failed; drop them before retrying.\n");
         }
@@ -124,7 +129,8 @@ try {
     if ($copied !== filesize($temp)) { unlink($path); throw new RuntimeException('Incomplete database copy'); }
     unlink($temp);
     echo 'Installed ' . $profile . " SQLite database.\n";
-} catch (Throwable $error) {
+} catch (Throwable) {
+    // No exception variable: its trace would hold installBuild()'s connection argument and keep the temporary file open.
     $db = null;
     gc_collect_cycles();
     if (is_file($temp)) { @unlink($temp); }

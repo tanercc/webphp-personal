@@ -233,6 +233,28 @@ function contractRun(PanelDbDialect $dialect, array $config, array $schema, ?arr
                 contractAssert($db->query('SELECT `id` FROM `keep_probe`')->fetch_all() === [['id' => 7]], 'install changed an existing row');
             });
         };
+        $checks['install_failure_cleanup'] = function () use ($dialect, $credentials, $schema): void {
+            contractScratch('mysql', $credentials, function (array $config) use ($dialect, $schema): void {
+                // describe() lists base tables only, so the database counts as empty, but CREATE TABLE `contact_limits` (the last table) fails.
+                $db = new PanelDbConnection($dialect, $config);
+                $db->pdo()->exec('CREATE VIEW `contact_limits` AS SELECT 1 AS `probe`');
+                [$code, , $stderr] = contractTool('install', ['--profile=demo'], contractMysqlEnv($config));
+                contractAssert($code === 1 && trim($stderr) === 'Installation failed. Existing databases preserved.', 'failed install output: '.trim($stderr));
+                contractAssert($dialect->describe($db->pdo())['tables'] === [], 'failed install left schema tables behind');
+                contractAssert($db->query('SELECT `probe` FROM `contact_limits`')->fetch_all() === [['probe' => 1]], 'failed install removed an object it did not create');
+                contractAssert(count($schema['tables']) > 1 && array_key_last($schema['tables']) === 'contact_limits', 'probe must collide with the last schema table');
+            });
+        };
+        $checks['install_lock'] = function () use ($dialect, $credentials): void {
+            contractScratch('mysql', $credentials, function (array $config) use ($dialect): void {
+                $db = new PanelDbConnection($dialect, $config);
+                $held = $db->execute_query('SELECT GET_LOCK(?, 0) AS `locked`', ['cms_install_'.md5($config['name'])])->fetch_assoc()['locked'];
+                contractAssert((int)$held === 1, 'test could not take the install lock');
+                [$code, , $stderr] = contractTool('install', ['--profile=demo'], contractMysqlEnv($config));
+                contractAssert($code === 1 && trim($stderr) === 'Another installation is running for this database; nothing was changed.', 'concurrent install not refused: '.trim($stderr));
+                contractAssert($dialect->describe($db->pdo())['tables'] === [], 'concurrent install created tables');
+            });
+        };
         $checks['install_secret_free'] = function () use ($dialect, $credentials): void {
             contractScratch('mysql', $credentials, function (array $config) use ($dialect): void {
                 $password = 'wrong-secret-'.bin2hex(random_bytes(6));
