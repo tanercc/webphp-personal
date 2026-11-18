@@ -15,7 +15,7 @@ if(($_SERVER['REQUEST_METHOD']??'GET')==='POST'){
     if($hits>5){$conn->rollback();http_response_code(429);$contactError='Biraz ara verip tekrar deneyin.';}
     else{
      $conn->upsert('contact_limits',['limit_key'=>$key,'window_start'=>$window,'hits'=>$hits],['limit_key']);
-     $conn->execute_query('INSERT INTO datas(name,type_id,info,column_1,column_2,is_active,deleted,sort_order) VALUES(?,6,?,?,?,1,0,50)',[$row['name'],$row['info'],$row['column_1'],$row['column_2']]);
+     $conn->execute_query('INSERT INTO datas(name,type_id,info,column_1,column_2,is_active,deleted,sort_order,created_at) VALUES(?,6,?,?,?,1,0,50,?)',[$row['name'],$row['info'],$row['column_1'],$row['column_2'],date('Y-m-d H:i:s')]);
      $conn->commit();$_SESSION['contact_sent']=true;header('Location: /contact',true,303);exit;
     }
    }catch(Throwable $error){$conn->rollback();http_response_code(503);$contactError='Mesaj kaydedilemedi. Biraz sonra tekrar deneyin.';}

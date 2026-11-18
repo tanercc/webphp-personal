@@ -150,6 +150,8 @@ if ($siteRequestId > 0 && $rowData = dbGetTableRow($siteRequest, $siteRequestId)
                 $inputFieldTypes = dbGetTableData('cats');
                 include "php/input-select.php";
 
+                include "php/input-tag_ids.php";
+
                 $inputFieldKey = 'parent_id';
                 $inputFieldTable = 'datas';
                 include "php/input-select2.php";

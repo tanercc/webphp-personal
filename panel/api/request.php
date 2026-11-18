@@ -45,6 +45,7 @@ switch ($_SERVER["REQUEST_METHOD"]) {
     }
 
     $result = apiDbInsertTableRow($apiRequest, $fields);
+    if ($result && isset($apiTagIds)) { apiDbSyncDataTags($result, $apiTagIds); }
 
     if ($result) {
       http_response_code(200);
@@ -64,7 +65,8 @@ switch ($_SERVER["REQUEST_METHOD"]) {
       $fields[$key] = (string) $value;
     }
 
-    if (apiDbUpdateTableRow($apiRequest, $apiRequestId, $fields)) {
+    if (($fields === [] && isset($apiTagIds)) || apiDbUpdateTableRow($apiRequest, $apiRequestId, $fields)) {
+      if (isset($apiTagIds)) { apiDbSyncDataTags($apiRequestId, $apiTagIds); }
       http_response_code(200);
       exit(json_encode(['id' => $apiRequestId]));
     } else {

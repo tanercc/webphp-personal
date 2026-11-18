@@ -48,6 +48,11 @@ try {
     } elseif ($apiRequest === 'media') {
         // Owner, upload and translation rules are checked in media.php.
     } else {
+        // datas.tag_ids: comma-separated tag ids synced into data_tags after the record write (request.php).
+        if ($apiRequest === 'datas' && in_array($method, ['PUT', 'POST'], true) && array_key_exists('tag_ids', $apiInput)) {
+            $apiTagIds = apiDbTagIds($apiInput['tag_ids']);
+            unset($apiInput['tag_ids']);
+        }
         $table = $apiRequest === 'self' ? 'users' : $apiRequest;
         $columns = apiColumnNames($table);
         $_GET = apiValidateOptions($table, $_GET, $columns);
@@ -55,7 +60,7 @@ try {
             if ($method === 'PUT' && $apiRequest !== 'self') { apiPositiveId($apiRequestId); }
             $id = $apiRequest === 'self' ? (int) $_SESSION['userId'] : $apiRequestId;
             $apiInput = apiValidateFields($apiRequest, $apiInput, $columns, $method === 'PUT', $id);
-            if ($apiInput === []) { throw new RuntimeException('No writable fields', 422); }
+            if ($apiInput === [] && !isset($apiTagIds)) { throw new RuntimeException('No writable fields', 422); }
         }
         if ($method === 'DELETE') { apiPositiveId($apiRequestId); }
     }

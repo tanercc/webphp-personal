@@ -146,6 +146,40 @@ function apiDbNormalizeFields(string $table, array $fields, bool $update, int $i
             if (($template['code'] ?? '') === 'category') { throw new RuntimeException('Select a category', 422); }
         }
     }
+    $definition = panelSchema()['tables'][$table] ?? [];
+    // Empty slugs are stored as NULL so the unique slug rules only apply to real values.
+    if (array_key_exists('slug', $fields) && $fields['slug'] === '') { $fields['slug'] = null; }
+    // Foreign keys: report a missing target as 422 instead of letting the engine fail the write.
+    foreach ($definition['foreign'] ?? [] as $fk) {
+        $column = $fk['column'];
+        if ($column === 'image_id' || !array_key_exists($column, $fields) || $fields[$column] === null) { continue; }
+        if (!apiDbQuery('SELECT id FROM ' . apiDbTable($fk['table']) . ' WHERE id=?', [(int) $fields[$column]])->fetch_assoc()) {
+            throw new RuntimeException('Invalid value: ' . $column, 422);
+        }
+    }
+    $current = null;
+    $merged = static function () use (&$current, $fields, $update, $table, $id): array {
+        $current ??= $update ? apiDbGetTableRow($table, $id) : [];
+        return array_replace($current, $fields);
+    };
+    foreach ($definition['unique'] ?? [] as $columns) {
+        if (!array_intersect($columns, array_keys($fields)) || array_diff($columns, apiDbColumns($table))) { continue; }
+        $row = $merged();
+        $values = array_map(static fn ($column) => $row[$column] ?? null, $columns);
+        if (in_array(null, $values, true) || in_array('', $values, true)) { continue; }
+        $where = implode(' AND ', array_map(static fn ($column) => "`$column`=?", $columns));
+        if (apiDbQuery('SELECT id FROM ' . apiDbTable($table) . " WHERE $where AND id<>?", [...$values, $id])->fetch_assoc()) {
+            throw new RuntimeException('Invalid value: ' . end($columns), 422);
+        }
+    }
+    // A menu item points to at most one record (a free `link` may accompany it).
+    $targets = ['page_id', 'data_id', 'datatype_id', 'cat_id', 'tag_id'];
+    if ($table === 'menus' && array_intersect($targets, array_keys($fields))) {
+        $row = $merged();
+        if (count(array_filter($targets, static fn ($column) => !empty($row[$column]))) > 1) {
+            throw new RuntimeException('Invalid value: menu target', 422);
+        }
+    }
     // A main image must be an active media row owned by this same record; a new record has none yet.
     if (array_key_exists('image_id', $fields) && $fields['image_id'] !== null && (!$update
         || !apiDbQuery('SELECT id FROM media WHERE id=? AND owner_table=? AND owner_id=? AND deleted=0 AND is_active=1', [(int) $fields['image_id'], $table, $id])->fetch_assoc())) {
@@ -187,6 +221,7 @@ function apiDbWrite(string $table, string $sql, array $values, array $fields, in
 function apiDbInsertTableRow(string $table, array $fields): int
 {
     $fields = apiDbNormalizeFields($table, $fields, false);
+    if (in_array('created_at', apiDbColumns($table), true)) { $fields['created_at'] = date('Y-m-d H:i:s'); }
     $columns = implode(',', array_map(static fn ($field) => "`$field`", array_keys($fields)));
     $placeholders = implode(',', array_fill(0, count($fields), '?'));
     return apiDbWrite($table, 'INSERT INTO ' . apiDbTable($table) . " ($columns) VALUES ($placeholders)", array_values($fields), array_keys($fields));
@@ -206,4 +241,37 @@ function apiDbDeleteTableRow(string $table, $id): bool
     $id = apiPositiveId($id);
     apiDbWrite($table, 'UPDATE ' . apiDbTable($table) . ' SET deleted=1 WHERE id=?', [$id], ['deleted'], $id);
     return true;
+}
+
+/** Parses `tag_ids` ("1,4,7" or empty) into existing, non-deleted tag ids. */
+function apiDbTagIds($value): array
+{
+    if (!is_string($value) || strlen($value) > 2000) { throw new RuntimeException('Invalid value: tag_ids', 422); }
+    $ids = $value === '' ? [] : array_values(array_unique(array_map(static function ($id) {
+        if (!preg_match('/^[1-9][0-9]{0,9}$/D', $id)) { throw new RuntimeException('Invalid value: tag_ids', 422); }
+        return (int) $id;
+    }, explode(',', $value))));
+    if (count($ids) > 100) { throw new RuntimeException('Invalid value: tag_ids', 422); }
+    if ($ids) {
+        $found = apiDbQuery('SELECT COUNT(*) AS n FROM tags WHERE deleted=0 AND id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')', $ids)->fetch_assoc();
+        if ((int) $found['n'] !== count($ids)) { throw new RuntimeException('Invalid value: tag_ids', 422); }
+    }
+    return $ids;
+}
+
+/** Replaces the tag set of one data record. */
+function apiDbSyncDataTags(int $dataId, array $tagIds): void
+{
+    global $conn;
+    if (!apiDbQuery('SELECT id FROM datas WHERE id=? AND deleted=0', [$dataId])->fetch_assoc()) { throw new RuntimeException('Resource not found', 404); }
+    $conn->begin_transaction();
+    try {
+        apiDbQuery('DELETE FROM data_tags WHERE data_id=?', [$dataId]);
+        $now = date('Y-m-d H:i:s');
+        foreach ($tagIds as $tagId) { apiDbQuery('INSERT INTO data_tags (data_id, tag_id, created_at) VALUES (?, ?, ?)', [$dataId, $tagId, $now]); }
+        $conn->commit();
+    } catch (Throwable $error) {
+        $conn->rollback();
+        throw $error;
+    }
 }

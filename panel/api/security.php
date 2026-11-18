@@ -64,7 +64,7 @@ function apiLookupTable($table, array $session, array $permissions): string
 {
     $relations = ['pages' => ['pagetypes'], 'sliders' => ['slidertypes'],
         'menus' => ['menutypes', 'pages', 'datas', 'datatypes', 'cats', 'tags'],
-        'datas' => ['datatypes', 'datas', 'templates'], 'cats' => ['datatypes', 'cats', 'templates'],
+        'datas' => ['datatypes', 'datas', 'templates', 'tags'], 'cats' => ['datatypes', 'cats', 'templates'],
         'tags' => ['cats'], 'users' => ['usertypes']];
     $allowed = ['langs'];
     foreach ($permissions[$session['userType'] ?? ''] ?? [] as $resource) {

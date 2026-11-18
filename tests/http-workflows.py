@@ -161,6 +161,24 @@ with tempfile.TemporaryDirectory(prefix='personal-'+DRIVER+'-test-') as tmp, scr
    js(admin,'PUT','/panel/api/lang',{'lang_table':'page_lang','id':plid,'title':'y'*255},token=token);assert db('SELECT title FROM page_lang WHERE id=?',(plid,))[0]['title']=='y'*255
 
    js(admin,'PUT','/panel/api/cats/999',{'template_id':'999'},token=token,status=422)
+   # Relations, unique slugs and menu targets are enforced by the schema and reported as 422.
+   assert js(admin,'PUT','/panel/api/pages/2',{'slug':'home'},token=token,status=422)=={'error':'Invalid value: slug'}
+   assert js(admin,'POST','/panel/api/datas',{'name':'Dup','slug':'atolye','type_id':'1'},token=token,status=422)=={'error':'Invalid value: slug'}
+   other=js(admin,'POST','/panel/api/datas',{'name':'Same slug, other type','slug':'atolye','type_id':'2'},token=token)['id']
+   assert db('SELECT created_at FROM datas WHERE id=?',(other,))[0]['created_at']
+   assert js(admin,'PUT','/panel/api/pages/2',{'type_id':'999'},token=token,status=422)=={'error':'Invalid value: type_id'}
+   assert js(admin,'PUT','/panel/api/menus/1',{'data_id':'1'},token=token,status=422)=={'error':'Invalid value: menu target'}
+   js(admin,'PUT','/panel/api/menus/1',{'page_id':'','data_id':'1'},token=token);js(admin,'PUT','/panel/api/menus/1',{'page_id':'1','data_id':''},token=token)
+   t1=str(js(admin,'POST','/panel/api/tags',{'name':'Etiket A','slug':'etiket-a'},token=token)['id'])
+   t2=str(js(admin,'POST','/panel/api/tags',{'name':'Etiket B','slug':'etiket-b'},token=token)['id'])
+   js(admin,'PUT','/panel/api/datas/1',{'tag_ids':t1+','+t2},token=token)
+   assert sorted(str(r['tag_id']) for r in db('SELECT tag_id FROM data_tags WHERE data_id=1'))==sorted([t1,t2])
+   assert 'Etiket A' in request(admin,'GET','/panel/datas/1')
+   js(admin,'PUT','/panel/api/datas/1',{'tag_ids':t2},token=token);assert [str(r['tag_id']) for r in db('SELECT tag_id FROM data_tags WHERE data_id=1')]==[t2]
+   js(admin,'PUT','/panel/api/datas/1',{'tag_ids':'999'},token=token,status=422)
+   js(admin,'PUT','/panel/api/datas/1',{'tag_ids':'1,x'},token=token,status=422)
+   js(admin,'PUT','/panel/api/datas/999',{'tag_ids':t2},token=token,status=404)
+   js(admin,'PUT','/panel/api/datas/1',{'tag_ids':''},token=token);assert db('SELECT tag_id FROM data_tags WHERE data_id=1')==[]
    html=request(guest,'GET','/contact');contact_token=csrf(html)
    request(guest,'POST','/contact',{'name':'Test visitor','email':'visitor@example.test','message':'Synthetic contact message','csrf_token':'wrong'},status=403)
    request(guest,'POST','/contact',{'name':'Test','email':'bad','message':'short','csrf_token':contact_token},status=422)

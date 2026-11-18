@@ -10,6 +10,16 @@ return [
         ['id' => 1, 'name' => 'Yönetici', 'slug' => 'admin'],
         ['id' => 2, 'name' => 'Editör', 'slug' => 'user'],
     ],
+    'media' => [
+        ['id' => 1, 'owner_table' => 'pages', 'owner_id' => 1, 'path' => '/uploads/media/pages/1/profile.png', 'original_name' => 'profile.png', 'mime' => 'image/png', 'size' => 1033963, 'width' => 800, 'height' => 1076, 'sort_order' => 10],
+        ['id' => 2, 'owner_table' => 'datas', 'owner_id' => 1, 'path' => '/uploads/media/datas/1/studio.png', 'original_name' => 'studio.png', 'mime' => 'image/png', 'size' => 1779, 'width' => 300, 'height' => 400, 'sort_order' => 10],
+        ['id' => 3, 'owner_table' => 'datas', 'owner_id' => 2, 'path' => '/uploads/media/datas/2/rota.png', 'original_name' => 'rota.png', 'mime' => 'image/png', 'size' => 1753, 'width' => 300, 'height' => 400, 'sort_order' => 10],
+    ],
+    'media_lang' => [
+        ['id' => 1, 'row_id' => 1, 'lang_id' => 1, 'title' => 'Profil', 'alt' => 'Deniz Aydın profil fotoğrafı'],
+        ['id' => 2, 'row_id' => 2, 'lang_id' => 1, 'title' => 'Atölye', 'alt' => 'Atölye portföy arayüzü ekran görüntüsü'],
+        ['id' => 3, 'row_id' => 3, 'lang_id' => 1, 'title' => 'Rota', 'alt' => 'Rota keşif platformu ekran görüntüsü'],
+    ],
     'users' => [
         ['id' => 1, 'name' => 'Demo Yönetici', 'email' => 'admin@personal.test', 'password' => '$2y$12$J59kALB/8IHirfV0FLougeVaCLeHGIDq11pXGnbi6HvVjZyJYrw6i', 'type_id' => 1, 'lang_id' => 1],
     ],
@@ -111,15 +121,5 @@ return [
         ['id' => 11, 'row_id' => 11, 'lang_id' => 1, 'name' => null, 'title' => 'HTML & CSS', 'content' => ''],
         ['id' => 12, 'row_id' => 12, 'lang_id' => 1, 'name' => null, 'title' => 'Türkçe — Ana dil', 'content' => ''],
         ['id' => 13, 'row_id' => 13, 'lang_id' => 1, 'name' => null, 'title' => 'İngilizce — İleri', 'content' => ''],
-    ],
-    'media' => [
-        ['id' => 1, 'owner_table' => 'pages', 'owner_id' => 1, 'path' => '/uploads/media/pages/1/profile.png', 'original_name' => 'profile.png', 'mime' => 'image/png', 'size' => 1033963, 'width' => 800, 'height' => 1076, 'sort_order' => 10],
-        ['id' => 2, 'owner_table' => 'datas', 'owner_id' => 1, 'path' => '/uploads/media/datas/1/studio.png', 'original_name' => 'studio.png', 'mime' => 'image/png', 'size' => 1779, 'width' => 300, 'height' => 400, 'sort_order' => 10],
-        ['id' => 3, 'owner_table' => 'datas', 'owner_id' => 2, 'path' => '/uploads/media/datas/2/rota.png', 'original_name' => 'rota.png', 'mime' => 'image/png', 'size' => 1753, 'width' => 300, 'height' => 400, 'sort_order' => 10],
-    ],
-    'media_lang' => [
-        ['id' => 1, 'row_id' => 1, 'lang_id' => 1, 'title' => 'Profil', 'alt' => 'Deniz Aydın profil fotoğrafı'],
-        ['id' => 2, 'row_id' => 2, 'lang_id' => 1, 'title' => 'Atölye', 'alt' => 'Atölye portföy arayüzü ekran görüntüsü'],
-        ['id' => 3, 'row_id' => 3, 'lang_id' => 1, 'title' => 'Rota', 'alt' => 'Rota keşif platformu ekran görüntüsü'],
     ],
 ];

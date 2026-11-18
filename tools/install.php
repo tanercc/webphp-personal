@@ -25,12 +25,14 @@ function installBuild(PanelDbConnection $db, string $root, string $profile, arra
     $schema = require $root . '/database/schema.php';
     panelCreateSchema($db, $schema, $created);
     $seed = require $root . '/database/' . ($profile === 'demo' ? 'seed.php' : 'seed-base.php');
+    $installedAt = date('Y-m-d H:i:s');
     $db->begin_transaction();
     try {
         foreach ($seed as $table => $rows) {
             $columns = $schema['tables'][$table]['columns'] ?? throw new RuntimeException('Seed table is not in the schema');
             foreach ($rows as $row) {
                 if (!isset($row['id']) || array_diff_key($row, $columns)) { throw new RuntimeException('Seed row has an unknown column or no id'); }
+                if (isset($columns['created_at']) && !array_key_exists('created_at', $row)) { $row['created_at'] = $installedAt; }
                 $names = array_map(static fn (string $column): string => '`' . panelDbIdentifier($column) . '`', array_keys($row));
                 $db->execute_query('INSERT INTO `' . panelDbIdentifier($table) . '` (' . implode(',', $names) . ') VALUES ('
                     . implode(',', array_fill(0, count($row), '?')) . ')', array_values($row));

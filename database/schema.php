@@ -21,9 +21,12 @@ return ['tables' => [
             'sort_order' => ['type' => 'int', 'default' => 50],
             'created_at' => ['type' => 'timestamp'],
         ],
-        'unique' => [],
+        'unique' => [['slug']],
         'indexes' => [],
-        'foreign' => [],
+        'foreign' => [
+            ['column' => 'type_id', 'table' => 'pagetypes', 'references' => 'id', 'on_delete' => 'SET NULL'],
+            ['column' => 'image_id', 'table' => 'media', 'references' => 'id', 'on_delete' => 'SET NULL'],
+        ],
     ],
     'page_lang' => [
         'columns' => [
@@ -38,7 +41,10 @@ return ['tables' => [
         ],
         'unique' => [['row_id', 'lang_id']],
         'indexes' => [],
-        'foreign' => [],
+        'foreign' => [
+            ['column' => 'row_id', 'table' => 'pages', 'references' => 'id', 'on_delete' => 'CASCADE'],
+            ['column' => 'lang_id', 'table' => 'langs', 'references' => 'id', 'on_delete' => 'CASCADE'],
+        ],
     ],
     'pagetypes' => [
         'columns' => [
@@ -68,7 +74,10 @@ return ['tables' => [
         ],
         'unique' => [],
         'indexes' => [],
-        'foreign' => [],
+        'foreign' => [
+            ['column' => 'type_id', 'table' => 'slidertypes', 'references' => 'id', 'on_delete' => 'SET NULL'],
+            ['column' => 'image_id', 'table' => 'media', 'references' => 'id', 'on_delete' => 'SET NULL'],
+        ],
     ],
     'slider_lang' => [
         'columns' => [
@@ -82,7 +91,10 @@ return ['tables' => [
         ],
         'unique' => [['row_id', 'lang_id']],
         'indexes' => [],
-        'foreign' => [],
+        'foreign' => [
+            ['column' => 'row_id', 'table' => 'sliders', 'references' => 'id', 'on_delete' => 'CASCADE'],
+            ['column' => 'lang_id', 'table' => 'langs', 'references' => 'id', 'on_delete' => 'CASCADE'],
+        ],
     ],
     'slidertypes' => [
         'columns' => [
@@ -117,7 +129,16 @@ return ['tables' => [
         ],
         'unique' => [],
         'indexes' => ['menus_public_type' => ['type_id', 'is_active', 'deleted', 'sort_order']],
-        'foreign' => [],
+        'foreign' => [
+            ['column' => 'type_id', 'table' => 'menutypes', 'references' => 'id', 'on_delete' => 'SET NULL'],
+            ['column' => 'image_id', 'table' => 'media', 'references' => 'id', 'on_delete' => 'SET NULL'],
+            ['column' => 'parent_id', 'table' => 'menus', 'references' => 'id', 'on_delete' => 'SET NULL'],
+            ['column' => 'page_id', 'table' => 'pages', 'references' => 'id', 'on_delete' => 'SET NULL'],
+            ['column' => 'data_id', 'table' => 'datas', 'references' => 'id', 'on_delete' => 'SET NULL'],
+            ['column' => 'datatype_id', 'table' => 'datatypes', 'references' => 'id', 'on_delete' => 'SET NULL'],
+            ['column' => 'cat_id', 'table' => 'cats', 'references' => 'id', 'on_delete' => 'SET NULL'],
+            ['column' => 'tag_id', 'table' => 'tags', 'references' => 'id', 'on_delete' => 'SET NULL'],
+        ],
     ],
     'menu_lang' => [
         'columns' => [
@@ -132,7 +153,10 @@ return ['tables' => [
         ],
         'unique' => [['row_id', 'lang_id']],
         'indexes' => [],
-        'foreign' => [],
+        'foreign' => [
+            ['column' => 'row_id', 'table' => 'menus', 'references' => 'id', 'on_delete' => 'CASCADE'],
+            ['column' => 'lang_id', 'table' => 'langs', 'references' => 'id', 'on_delete' => 'CASCADE'],
+        ],
     ],
     'menutypes' => [
         'columns' => [
@@ -179,9 +203,15 @@ return ['tables' => [
             'created_at' => ['type' => 'timestamp'],
             'template_id' => ['type' => 'int'],
         ],
-        'unique' => [],
+        'unique' => [['type_id', 'slug']],
         'indexes' => ['datas_public_type' => ['type_id', 'is_active', 'deleted', 'sort_order']],
-        'foreign' => [['column' => 'template_id', 'table' => 'templates', 'references' => 'id', 'on_delete' => 'SET NULL']],
+        'foreign' => [
+            ['column' => 'type_id', 'table' => 'datatypes', 'references' => 'id', 'on_delete' => 'SET NULL'],
+            ['column' => 'image_id', 'table' => 'media', 'references' => 'id', 'on_delete' => 'SET NULL'],
+            ['column' => 'cat_id', 'table' => 'cats', 'references' => 'id', 'on_delete' => 'SET NULL'],
+            ['column' => 'parent_id', 'table' => 'datas', 'references' => 'id', 'on_delete' => 'SET NULL'],
+            ['column' => 'template_id', 'table' => 'templates', 'references' => 'id', 'on_delete' => 'SET NULL'],
+        ],
     ],
     'data_lang' => [
         'columns' => [
@@ -196,7 +226,10 @@ return ['tables' => [
         ],
         'unique' => [['row_id', 'lang_id']],
         'indexes' => [],
-        'foreign' => [],
+        'foreign' => [
+            ['column' => 'row_id', 'table' => 'datas', 'references' => 'id', 'on_delete' => 'CASCADE'],
+            ['column' => 'lang_id', 'table' => 'langs', 'references' => 'id', 'on_delete' => 'CASCADE'],
+        ],
     ],
     'datatypes' => [
         'columns' => [
@@ -208,7 +241,7 @@ return ['tables' => [
             'sort_order' => ['type' => 'int', 'default' => 50],
             'created_at' => ['type' => 'timestamp'],
         ],
-        'unique' => [],
+        'unique' => [['slug']],
         'indexes' => [],
         'foreign' => [],
     ],
@@ -223,7 +256,10 @@ return ['tables' => [
         ],
         'unique' => [['row_id', 'lang_id']],
         'indexes' => [],
-        'foreign' => [],
+        'foreign' => [
+            ['column' => 'row_id', 'table' => 'datatypes', 'references' => 'id', 'on_delete' => 'CASCADE'],
+            ['column' => 'lang_id', 'table' => 'langs', 'references' => 'id', 'on_delete' => 'CASCADE'],
+        ],
     ],
     'cats' => [
         'columns' => [
@@ -240,9 +276,14 @@ return ['tables' => [
             'created_at' => ['type' => 'timestamp'],
             'template_id' => ['type' => 'int'],
         ],
-        'unique' => [],
+        'unique' => [['slug']],
         'indexes' => [],
-        'foreign' => [['column' => 'template_id', 'table' => 'templates', 'references' => 'id', 'on_delete' => 'SET NULL']],
+        'foreign' => [
+            ['column' => 'type_id', 'table' => 'datatypes', 'references' => 'id', 'on_delete' => 'SET NULL'],
+            ['column' => 'image_id', 'table' => 'media', 'references' => 'id', 'on_delete' => 'SET NULL'],
+            ['column' => 'parent_id', 'table' => 'cats', 'references' => 'id', 'on_delete' => 'SET NULL'],
+            ['column' => 'template_id', 'table' => 'templates', 'references' => 'id', 'on_delete' => 'SET NULL'],
+        ],
     ],
     'cat_lang' => [
         'columns' => [
@@ -257,7 +298,10 @@ return ['tables' => [
         ],
         'unique' => [['row_id', 'lang_id']],
         'indexes' => [],
-        'foreign' => [],
+        'foreign' => [
+            ['column' => 'row_id', 'table' => 'cats', 'references' => 'id', 'on_delete' => 'CASCADE'],
+            ['column' => 'lang_id', 'table' => 'langs', 'references' => 'id', 'on_delete' => 'CASCADE'],
+        ],
     ],
     'tags' => [
         'columns' => [
@@ -273,9 +317,12 @@ return ['tables' => [
             'sort_order' => ['type' => 'int', 'default' => 50],
             'created_at' => ['type' => 'timestamp'],
         ],
-        'unique' => [],
+        'unique' => [['slug']],
         'indexes' => [],
-        'foreign' => [],
+        'foreign' => [
+            ['column' => 'image_id', 'table' => 'media', 'references' => 'id', 'on_delete' => 'SET NULL'],
+            ['column' => 'cat_id', 'table' => 'cats', 'references' => 'id', 'on_delete' => 'SET NULL'],
+        ],
     ],
     'tag_lang' => [
         'columns' => [
@@ -288,7 +335,24 @@ return ['tables' => [
         ],
         'unique' => [['row_id', 'lang_id']],
         'indexes' => [],
-        'foreign' => [],
+        'foreign' => [
+            ['column' => 'row_id', 'table' => 'tags', 'references' => 'id', 'on_delete' => 'CASCADE'],
+            ['column' => 'lang_id', 'table' => 'langs', 'references' => 'id', 'on_delete' => 'CASCADE'],
+        ],
+    ],
+    'data_tags' => [
+        'columns' => [
+            'id' => ['type' => 'id'],
+            'data_id' => ['type' => 'int', 'nullable' => false],
+            'tag_id' => ['type' => 'int', 'nullable' => false],
+            'created_at' => ['type' => 'timestamp'],
+        ],
+        'unique' => [['data_id', 'tag_id']],
+        'indexes' => [],
+        'foreign' => [
+            ['column' => 'data_id', 'table' => 'datas', 'references' => 'id', 'on_delete' => 'CASCADE'],
+            ['column' => 'tag_id', 'table' => 'tags', 'references' => 'id', 'on_delete' => 'CASCADE'],
+        ],
     ],
     'users' => [
         'columns' => [
@@ -307,7 +371,11 @@ return ['tables' => [
         ],
         'unique' => [['email']],
         'indexes' => [],
-        'foreign' => [],
+        'foreign' => [
+            ['column' => 'type_id', 'table' => 'usertypes', 'references' => 'id', 'on_delete' => 'SET NULL'],
+            ['column' => 'image_id', 'table' => 'media', 'references' => 'id', 'on_delete' => 'SET NULL'],
+            ['column' => 'lang_id', 'table' => 'langs', 'references' => 'id', 'on_delete' => 'SET NULL'],
+        ],
     ],
     'usertypes' => [
         'columns' => [
@@ -319,7 +387,7 @@ return ['tables' => [
             'sort_order' => ['type' => 'int', 'default' => 50],
             'created_at' => ['type' => 'timestamp'],
         ],
-        'unique' => [],
+        'unique' => [['slug']],
         'indexes' => [],
         'foreign' => [],
     ],
@@ -346,7 +414,10 @@ return ['tables' => [
         ],
         'unique' => [['row_id', 'lang_id']],
         'indexes' => [],
-        'foreign' => [],
+        'foreign' => [
+            ['column' => 'row_id', 'table' => 'variables', 'references' => 'id', 'on_delete' => 'CASCADE'],
+            ['column' => 'lang_id', 'table' => 'langs', 'references' => 'id', 'on_delete' => 'CASCADE'],
+        ],
     ],
     'media' => [
         'columns' => [
@@ -380,7 +451,10 @@ return ['tables' => [
         ],
         'unique' => [['row_id', 'lang_id']],
         'indexes' => [],
-        'foreign' => [],
+        'foreign' => [
+            ['column' => 'row_id', 'table' => 'media', 'references' => 'id', 'on_delete' => 'CASCADE'],
+            ['column' => 'lang_id', 'table' => 'langs', 'references' => 'id', 'on_delete' => 'CASCADE'],
+        ],
     ],
     'langs' => [
         'columns' => [
@@ -388,15 +462,12 @@ return ['tables' => [
             'name' => ['type' => 'varchar', 'length' => 50],
             'slug' => ['type' => 'varchar', 'length' => 50, 'binary' => true],
             'iso_code' => ['type' => 'varchar', 'length' => 50],
-            'cat' => ['type' => 'varchar', 'length' => 50],
-            'tag' => ['type' => 'varchar', 'length' => 50],
-            'page' => ['type' => 'varchar', 'length' => 50],
             'is_active' => ['type' => 'tinyint', 'default' => 1],
             'deleted' => ['type' => 'tinyint', 'default' => 0],
             'sort_order' => ['type' => 'int', 'default' => 50],
             'created_at' => ['type' => 'timestamp'],
         ],
-        'unique' => [],
+        'unique' => [['slug']],
         'indexes' => [],
         'foreign' => [],
     ],

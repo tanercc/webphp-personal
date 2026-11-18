@@ -80,7 +80,7 @@ function apiMediaUpload(string $table, int $id, $file): int
     $original = mb_substr(preg_replace('/[\x00-\x1f\x7f]/u', '', basename(str_replace('\\', '/', $file['name']))) ?? '', 0, 255, 'UTF-8');
     $order = (int) apiDbQuery('SELECT COALESCE(MAX(sort_order), 0) AS m FROM media WHERE owner_table=? AND owner_id=?', [$table, $id])->fetch_assoc()['m'] + 10;
     $fields = ['owner_table' => $table, 'owner_id' => $id, 'path' => "/uploads/media/$table/$id/$name",
-        'original_name' => $original, 'mime' => $mime, 'size' => $size, 'width' => $width, 'height' => $height, 'sort_order' => $order];
+        'original_name' => $original, 'mime' => $mime, 'size' => $size, 'width' => $width, 'height' => $height, 'sort_order' => $order, 'created_at' => date('Y-m-d H:i:s')];
     try {
         $fields = panelValidateWrite('media', $fields);
         $columns = implode(',', array_map(static fn ($field) => "`$field`", array_keys($fields)));
