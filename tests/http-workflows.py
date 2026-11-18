@@ -11,7 +11,7 @@ if DRIVER not in ('sqlite','mysql'):print('Usage: python tests/http-workflows.py
 MYSQL_KEYS=['PANEL_TEST_MYSQL_'+k for k in ('HOST','PORT','USER','PASSWORD')]
 if DRIVER=='mysql' and any(k not in os.environ or (os.environ[k]=='' and not k.endswith('PASSWORD')) for k in MYSQL_KEYS):
  print('MySQL test credentials missing (PANEL_TEST_MYSQL_HOST/PORT/USER/PASSWORD)');sys.exit(2)
-SECRETS=[os.environ[k] for k in MYSQL_KEYS if len(os.environ.get(k,''))>3] if DRIVER=='mysql' else []
+SECRETS=sorted({form for k in (MYSQL_KEYS[0],MYSQL_KEYS[2],MYSQL_KEYS[3]) if DRIVER=='mysql' and os.environ.get(k) for v in [os.environ[k]] for form in (v,json.dumps(v)[1:-1],v.replace(chr(92),chr(92)*2))},key=len,reverse=True)
 def scrub(text):
  for value in SECRETS:text=text.replace(value,'***')
  return text
@@ -54,8 +54,8 @@ def request(c,method,path,fields=None,token=None,status=200):
  try:r=c.open(urllib.request.Request(base+path,data=data,headers=headers,method=method),timeout=15)
  except urllib.error.HTTPError as e:r=e
  body=r.read().decode('utf-8');count+=1
- assert r.code==status,(method,path,r.code,status,body[:250])
- assert not any(t in body for t in ['Fatal error','Warning:','An error occurred.']),(path,body[:300])
+ assert r.code==status,(method,path,r.code,status,scrub(body[:250]))
+ assert not any(t in body for t in ['Fatal error','Warning:','An error occurred.']),(path,scrub(body[:300]))
  return body
 
 def js(*args,**kwargs):return json.loads(request(*args,**kwargs))
@@ -114,7 +114,9 @@ with tempfile.TemporaryDirectory(prefix='personal-'+DRIVER+'-test-') as tmp, scr
    uid=js(admin,'POST','/panel/api/pages',uni,token=token)['id']
    assert js(admin,'GET','/panel/api/pages/'+str(uid))['name']==uni['name']
    assert db('SELECT name FROM pages WHERE slug=?',('unicode-test',))[0]['name']==uni['name']
-   assert all(isinstance(row['id'],str) for row in js(admin,'GET','/panel/api/pages')['data']) and isinstance(js(admin,'GET','/panel/api/pages/1')['id'],str)
+   rows=js(admin,'GET','/panel/api/pages')['data'];assert rows
+   assert all(isinstance(row['id'],str) for row in rows)
+   assert isinstance(js(admin,'GET','/panel/api/pages/1')['id'],str)
    js(admin,'PUT','/panel/api/pages/'+str(rid),{'name':'Updated','is_active':'0'},token=token)
    js(admin,'DELETE','/panel/api/pages/'+str(rid),token=token)
    guarded=[f for d in ['app','panel/include','panel/api','templates'] for f in (ROOT/d).rglob('*.php') if f.name!='db_dialect.php' or d=='panel/api']+[ROOT/'index.php']
@@ -174,7 +176,7 @@ with tempfile.TemporaryDirectory(prefix='cms-starter-test-') as tmp, scratch_db(
  result=subprocess.run([PHP,str(ROOT/'tools/create-site.php'),'--target='+str(ROOT/'forbidden-nested-site')],cwd=ROOT,capture_output=True)
  assert result.returncode==1 and not (ROOT/'forbidden-nested-site').exists()
  create=subprocess.run([PHP,str(ROOT/'tools/create-site.php'),'--target='+str(target),'--name=Yeni Firma & Ortakları'],cwd=ROOT,capture_output=True)
- assert create.returncode==0,create.stderr.decode(errors='replace')
+ assert create.returncode==0,scrub(create.stderr.decode(errors='replace'))
  for forbidden in ['.git','storage/personal.sqlite','storage/site.sqlite','config/config.runtime.php','assets/profile.png','database/seed.php','tools/seed-media.php','templates/pages','app/contact.php','panel/content-messages.php']:
   assert not (target/forbidden).exists(),forbidden
  assert not list((target/'uploads').rglob('*.png'))
@@ -201,7 +203,7 @@ with tempfile.TemporaryDirectory(prefix='cms-starter-test-') as tmp, scratch_db(
  assert int(db('SELECT count(*) AS c FROM pages')[0]['c'])==1
  assert int(db('SELECT count(*) AS c FROM logs')[0]['c'])==0
  exists=subprocess.run([PHP,str(ROOT/'tests/db-query.php'),'--table-exists=contact_limits'],cwd=ROOT,env=env,capture_output=True,text=True)
- assert exists.returncode==0 and exists.stdout.strip()=='true',exists.stderr
+ assert exists.returncode==0 and exists.stdout.strip()=='true',scrub(exists.stderr)
  assert not list((target/'uploads/files').rglob('*'))
  fingerprint=snapshot(target/'storage/site.sqlite')
  refuse=subprocess.run([PHP,str(target/'tools/install.php'),'--admin-email='+email],cwd=target,env=env,capture_output=True)
@@ -242,7 +244,7 @@ with tempfile.TemporaryDirectory(prefix='cms-starter-test-') as tmp, scratch_db(
   finally:
    server.terminate();server.wait(timeout=10)
   if (tmp/'starter-errors.log').exists():
-   assert (tmp/'starter-errors.log').stat().st_size==0, (tmp/'starter-errors.log').read_text(errors='replace')[-2200:]
+   assert (tmp/'starter-errors.log').stat().st_size==0, scrub((tmp/'starter-errors.log').read_text(errors='replace')[-2200:])
   log_text=(tmp/'starter-server.log').read_text(errors='replace')
   assert not re.search(r'PHP (?:Fatal|Warning|Deprecated)|CMS database operation failed',log_text),scrub(log_text[-2000:])
  assert source_db_hash==hashlib.sha256((ROOT/'storage/personal.sqlite').read_bytes()).hexdigest()
