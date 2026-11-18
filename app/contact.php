@@ -12,7 +12,7 @@ if(($_SERVER['REQUEST_METHOD']??'GET')==='POST'){
     $hits=$limit&&(int)$limit['window']===$window?(int)$limit['hits']+1:1;
     if($hits>5){$conn->rollback();http_response_code(429);$contactError='Biraz ara verip tekrar deneyin.';}
     else{
-     $conn->execute_query('INSERT INTO contact_limits(key,window,hits) VALUES(?,?,?) ON CONFLICT(key) DO UPDATE SET window=excluded.window,hits=excluded.hits',[$key,$window,$hits]);
+     $conn->upsert('contact_limits',['key'=>$key,'window'=>$window,'hits'=>$hits],['key']);
      $conn->execute_query('INSERT INTO datas(name,type_id,info,column_1,column_2,is_active,deleted,sort_order) VALUES(?,6,?,?,?,1,0,50)',[$values['name'],$values['message'],$values['email'],$values['phone']]);
      $conn->commit();$_SESSION['contact_sent']=true;header('Location: /contact',true,303);exit;
     }

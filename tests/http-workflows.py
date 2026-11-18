@@ -4,6 +4,7 @@ import os,subprocess,tempfile,socket,time,urllib.request,urllib.error,urllib.par
 ROOT=Path(__file__).resolve().parent.parent
 PHP=subprocess.check_output(['php','-r','echo PHP_BINARY;'],text=True).strip()
 count=0
+NON_PORTABLE_SQL=[r'SQL_CALC_FOUND_ROWS',r'FOUND_ROWS',r'SHOW\s+COLUMNS',r'sqlite_master',r'PRAGMA',r'ON\s+CONFLICT',r'ON\s+DUPLICATE',r'INSERT\s+INTO\s+`[a-z_]+`\s+SET',r'''LIMIT\s+['"]\s*\.[^;\n]*,''']
 
 def client():return urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
 def request(c,method,path,fields=None,token=None,status=200):
@@ -71,6 +72,14 @@ with tempfile.TemporaryDirectory(prefix='personal-sqlite-test-') as tmp:
    assert js(admin,'GET','/panel/api/pages/'+str(rid))['name']==fields['name']
    js(admin,'PUT','/panel/api/pages/'+str(rid),{'name':'Updated','is_active':'0'},token=token)
    js(admin,'DELETE','/panel/api/pages/'+str(rid),token=token)
+   guarded=[f for d in ['app','panel/include','panel/api','templates'] for f in (ROOT/d).rglob('*.php') if f.name not in {'sqlite.php','database.php','db_dialect.php','db_migrations.php'} or d=='panel/api']+[ROOT/'index.php']
+   for f in guarded:
+    text=f.read_text(encoding='utf-8')
+    for pattern in NON_PORTABLE_SQL:assert not re.search(pattern,text,re.I),(f.name,pattern)
+   like=js(admin,'POST','/panel/api/pages',{'name':'100%_off!','slug':'like-test','type_id':'1'},token=token)['id']
+   assert js(admin,'GET','/panel/api/pages?q=100%25_')['itemsCount']==1
+   assert js(admin,'GET','/panel/api/pages?q=1000')['itemsCount']==0
+   assert js(admin,'GET','/panel/api/pages?q=100!')['itemsCount']==0
    conn=sqlite3.connect(tmp/'test.sqlite');assert conn.execute('SELECT deleted FROM pages WHERE id=?',(rid,)).fetchone()[0]==1
    # Translation updates must appear in the real rendered website, with sanitized HTML.
    lid=conn.execute('SELECT id FROM page_lang WHERE row_id=1 AND lang_id=1').fetchone()[0]

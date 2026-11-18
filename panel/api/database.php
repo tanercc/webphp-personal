@@ -27,7 +27,8 @@ function apiDbColumns(string $table): array
 {
     global $conn;
     $columns = [];
-    foreach ($conn->query('SHOW COLUMNS FROM ' . apiDbTable($table))->fetch_all(PDO::FETCH_ASSOC) as $column) {
+    apiDbTable($table);
+    foreach ($conn->columns($table) as $column) {
         if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/D', $column['Field'])) { throw new RuntimeException('Unsupported schema field', 500); }
         $columns[] = $column['Field'];
     }
@@ -69,8 +70,8 @@ function apiDbGetTableData(string $table, ?array $fields = null, array $options 
     foreach ($options as $key => $value) {
         if ($key === 'q') {
             $searchField = in_array('name', $columns, true) ? 'name' : 'filename';
-            $where[] = "t.`$searchField` LIKE ?";
-            $values[] = $value . '%';
+            $where[] = "t.`$searchField` LIKE ? ESCAPE '!'";
+            $values[] = dbLikePrefix((string) $value);
         }
         elseif ($key !== 'deleted' && in_array($key, $columns, true)) { $where[] = "t.`$key` = ?"; $values[] = $value; }
     }

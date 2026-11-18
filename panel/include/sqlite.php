@@ -26,7 +26,6 @@ final class PanelSqliteConnection {
  public PDO $pdo;
  public int $insert_id=0;
  public int $affected_rows=0;
- public int $found_rows=0;
  public function __construct(string $path) {
   if(!is_file($path)){throw new RuntimeException('Run php tools/install.php first');}
   $this->pdo=new PDO('sqlite:'.$path,null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]);
@@ -39,21 +38,21 @@ final class PanelSqliteConnection {
    $out[]=['Field'=>$c['name'],'Type'=>strtolower($c['type']),'Null'=>$c['notnull']?'NO':'YES','Key'=>$c['pk']?'PRI':'','Default'=>$default,'Extra'=>$c['pk']?'auto_increment':''];}
   return $out;
  }
+ public function tableExists(string $table):bool {
+  if(!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/D',$table)){throw new InvalidArgumentException('Invalid table');}
+  $s=$this->pdo->prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?");$s->execute([$table]);return $s->fetchColumn()!==false;
+ }
+ public function upsert(string $table,array $row,array $keyColumns):void {
+  $id=static function(string $n):string{if(!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/D',$n)){throw new InvalidArgumentException('Invalid identifier');}return '`'.$n.'`';};
+  if(!$row||!$keyColumns||array_diff($keyColumns,array_keys($row))){throw new InvalidArgumentException('Invalid upsert');}
+  $cols=array_map($id,array_map('strval',array_keys($row)));$keys=array_map($id,$keyColumns);
+  $set=[];foreach(array_keys($row) as $c){if(!in_array($c,$keyColumns,true)){$set[]=$id($c).'=excluded.'.$id($c);}}
+  $sql='INSERT INTO '.$id($table).' ('.implode(',',$cols).') VALUES ('.implode(',',array_fill(0,count($row),'?')).') ON CONFLICT ('.implode(',',$keys).') '.($set?'DO UPDATE SET '.implode(',',$set):'DO NOTHING');
+  $this->execute_query($sql,array_values($row));
+ }
  public function query(string $sql):PanelSqliteResult|bool {return $this->execute_query($sql);}
  public function prepare(string $sql):PanelSqliteStatement {return new PanelSqliteStatement($this,$sql);}
  public function execute_query(string $sql,array $values=[]):PanelSqliteResult|bool {
-  if(preg_match('/^SHOW COLUMNS FROM `?([a-zA-Z_][a-zA-Z0-9_]*)`?$/iD',trim($sql),$m)){return new PanelSqliteResult($this->columns($m[1]));}
-  if(preg_match('/^SELECT FOUND_ROWS\(\);?$/iD',trim($sql))){return new PanelSqliteResult([['FOUND_ROWS()'=>$this->found_rows]]);}
-  // Legacy helper emits INSERT ... SET; API writes already use standard INSERT syntax.
-  if(preg_match('/^INSERT INTO (`[a-zA-Z_][a-zA-Z0-9_]*`) SET (.+)$/isD',$sql,$m)){
-   $assign=explode(',',$m[2]);$names=[];foreach($assign as $a){if(!preg_match('/^\s*(`\w+`)\s*=\s*\?\s*$/D',$a,$n)){throw new RuntimeException('Unsupported legacy insert');}$names[]=$n[1];}
-   $sql='INSERT INTO '.$m[1].' ('.implode(',',$names).') VALUES ('.implode(',',array_fill(0,count($names),'?')).')';
-  }
-  if(str_contains($sql,'SQL_CALC_FOUND_ROWS')){
-   $sql=str_replace('SQL_CALC_FOUND_ROWS','',$sql);
-   $countSql=preg_replace('/\s+LIMIT\s+\d+\s*,\s*\d+\s*$/i','',$sql);
-   $count=$this->pdo->prepare('SELECT COUNT(*) FROM ('.$countSql.') counted');$count->execute($values);$this->found_rows=(int)$count->fetchColumn();
-  }
   $statement=$this->pdo->prepare($sql);
   foreach(array_values($values) as $i=>$value){$statement->bindValue($i+1,$value,$value===null?PDO::PARAM_NULL:(is_int($value)||is_bool($value)?PDO::PARAM_INT:PDO::PARAM_STR));}
   $statement->execute();$this->affected_rows=$statement->rowCount();

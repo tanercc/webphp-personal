@@ -32,7 +32,12 @@ function dbSqlLimit($pageIndex, $pageSize): string
   $pageIndex = dbSqlInteger($pageIndex); $pageSize = dbSqlInteger($pageSize);
   if ($pageIndex === 0 || $pageSize === 0) { return ''; }
   if (($pageIndex - 1) > intdiv(PHP_INT_MAX, $pageSize)) { throw new InvalidArgumentException('Pagination overflow'); }
-  return ' LIMIT ' . (($pageIndex - 1) * $pageSize) . ', ' . $pageSize;
+  return ' LIMIT ' . $pageSize . ' OFFSET ' . (($pageIndex - 1) * $pageSize);
+}
+
+function dbLikePrefix(string $term): string
+{
+  return str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $term) . '%';
 }
 
 function dbSqlIdentifier($name): string
@@ -123,8 +128,8 @@ function dbGetVariablesData($options = [])
     $sql .= " AND `variables`.`$key`=?"; $params[] = $value;
   }
   if (array_key_exists('q', $options)) {
-    $clauses = ['`name` LIKE ?']; $params[] = (string) $options['q'] . '%';
-    foreach ($aliases as $alias) { $clauses[] = "`$alias` LIKE ?"; $params[] = (string) $options['q'] . '%'; }
+    $clauses = ["`name` LIKE ? ESCAPE '!'"]; $params[] = dbLikePrefix((string) $options['q']);
+    foreach ($aliases as $alias) { $clauses[] = "`$alias` LIKE ? ESCAPE '!'"; $params[] = dbLikePrefix((string) $options['q']); }
     $sql .= ' HAVING (' . implode(' OR ', $clauses) . ')';
   }
   $sql .= " ORDER BY `variables`.`$sortField` $sortOrder, `variables`.`id`";
@@ -222,7 +227,7 @@ function dbGetTableData($table, $fields = null, $options = [])
   if ($typeTable) { $typeTable = dbSqlIdentifier($typeTable); }
   if ($catTable) { $catTable = dbSqlIdentifier($catTable); }
   $params = [$deleted];
-  $sqlstring = "SELECT SQL_CALC_FOUND_ROWS ";
+  $sqlstring = "SELECT ";
   if ($fields && is_array($fields)) {
     $fields = array_values(array_intersect($fields, $tableFields));
     array_walk($fields, function (&$f) {
@@ -248,8 +253,8 @@ function dbGetTableData($table, $fields = null, $options = [])
     foreach ($options as $key => $value) {
       if (!is_scalar($value) && $value !== null) { throw new InvalidArgumentException("Invalid filter value"); }
       if ($key == 'q') {
-        $sqlstring .= " AND `$table`.`name` LIKE ?";
-        $params[] = (string) $value . "%";
+        $sqlstring .= " AND `$table`.`name` LIKE ? ESCAPE '!'";
+        $params[] = dbLikePrefix((string) $value);
       } else if (in_array($key, array_merge(["id"], $tableFields), true)) {
         $sqlstring .= " AND `$table`.`$key`=?";
         $params[] = $value;
@@ -257,6 +262,8 @@ function dbGetTableData($table, $fields = null, $options = [])
     }
   }
 
+  $countSql = "SELECT COUNT(*) FROM (" . $sqlstring . ") counted";
+  $GLOBALS['dbFoundRows'] = (int) sqlQuery($countSql, $params)->fetch_row()[0];
   $sqlstring .= " ORDER BY `$table`.`$sortField` $sortOrder, `$table`.`id`";
 
   $sqlstring .= dbSqlLimit($pageIndex, $pageSize);
@@ -275,9 +282,7 @@ function dbGetTableData($table, $fields = null, $options = [])
 //=======================================================
 function dbGetFoundRows()
 {
-  $sqlresult = sqlQuery("SELECT FOUND_ROWS();");
-  $resultArray=$sqlresult->fetch_array();
-  return $resultArray["FOUND_ROWS()"];
+  return $GLOBALS['dbFoundRows'] ?? 0;
 }
 
 //=======================================================
@@ -313,9 +318,9 @@ function dbGetTableFieldNames($table)
 {
   $table = dbSqlIdentifier($table);
   $exclude_fields = ['id', 'row_id', 'lang_id', 'deleted', 'created_at', 'updated_at'];
-  $sqlresult = sqlQuery("SHOW COLUMNS FROM `$table`");
+  global $conn;
   $resultarr = [];
-  while ($row = $sqlresult->fetch_assoc()) {
+  foreach ($conn->columns($table) as $row) {
     if (!in_array($row['Field'], $exclude_fields)) $resultarr[] = dbSqlIdentifier($row['Field']);
   }
   return $resultarr;
@@ -328,9 +333,9 @@ function dbGetTableFields($table)
 {
   $table = dbSqlIdentifier($table);
   $exclude_fields = ['id', 'row_id', 'lang_id', 'deleted', 'created_at', 'updated_at'];
-  $sqlresult = sqlQuery("SHOW COLUMNS FROM `$table`");
+  global $conn;
   $resultarr = [];
-  while ($row = $sqlresult->fetch_assoc()) {
+  foreach ($conn->columns($table) as $row) {
     dbSqlIdentifier($row['Field']);
     if (!in_array($row['Field'], $exclude_fields)) $resultarr[] = $row;
   }
@@ -343,9 +348,9 @@ function dbGetTableFields($table)
 function dbLegacyWriteValues($table, array $fields): array
 {
   $table = dbSqlIdentifier($table);
+  global $conn;
   $columns = [];
-  $result = sqlQuery("SHOW COLUMNS FROM `$table`");
-  while ($row = $result->fetch_assoc()) { $columns[] = dbSqlIdentifier($row['Field']); }
+  foreach ($conn->columns($table) as $row) { $columns[] = dbSqlIdentifier($row['Field']); }
   $values = [];
   foreach ($fields as $key => $value) {
     if ($key === 'id') { continue; }
@@ -372,8 +377,9 @@ function dbInsertTableRow($table, $fields)
   if (!$fields || !is_array($fields)) { return []; }
   $table = dbSqlIdentifier($table); $values = dbLegacyWriteValues($table, $fields);
   if (!$values) { return []; }
-  $assignments = array_map(static fn ($key) => "`$key`=?", array_keys($values));
-  $result = sqlQuery("INSERT INTO `$table` SET " . implode(',', $assignments), array_values($values));
+  $names = implode(',', array_map(static fn ($key) => "`$key`", array_keys($values)));
+  $marks = implode(',', array_fill(0, count($values), '?'));
+  $result = sqlQuery("INSERT INTO `$table` ($names) VALUES ($marks)", array_values($values));
   $id = $conn->insert_id;
   dbWriteLog($table, json_encode(['action' => 'insert', 'id' => $id, 'fields' => array_keys($values)], JSON_THROW_ON_ERROR));
   return $result ? $id : false;
@@ -412,14 +418,8 @@ function dbDeleteTableRow($table, $id)
 //=======================================================
 function dbIsTableExist($table)
 {
-  $table = dbSqlIdentifier($table);
-  $sqlresult = sqlQuery("SELECT name FROM sqlite_master WHERE type='table' AND name=?", [$table]);
-
-  if ($row = $sqlresult->fetch_row()) {
-    return ($row[0] == $table);
-  } else {
-    return false;
-  }
+  global $conn;
+  return $conn->tableExists(dbSqlIdentifier($table));
 }
 
 //=======================================================
