@@ -98,7 +98,7 @@ function contractRun(PanelDbDialect $dialect, array $config, array $schema, ?arr
         contractAssert(array_column($columns, 'Field') === array_keys($schema['tables']['pages']['columns']), 'pages field order');
         $byName = array_column($columns, null, 'Field');
         contractAssert(array_keys($columns[0]) === ['Field', 'Type', 'Null', 'Key', 'Default', 'Extra'], 'columns() keys');
-        contractAssert($byName['name']['Type'] === 'varchar(50)', 'pages.name type');
+        contractAssert($byName['name']['Type'] === 'varchar(255)', 'pages.name type');
         contractAssert($byName['created_at']['Type'] === 'timestamp', 'pages.created_at type');
         contractAssert($byName['is_active']['Default'] === '1', 'pages.is_active default');
         contractAssert($byName['id']['Key'] === 'PRI' && $byName['id']['Extra'] === 'auto_increment', 'pages.id key');

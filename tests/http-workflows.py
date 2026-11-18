@@ -152,8 +152,8 @@ with tempfile.TemporaryDirectory(prefix='personal-'+DRIVER+'-test-') as tmp, scr
    js(admin,'PUT','/panel/api/lang',{'lang_table':'data_lang','id':lid,'content':'<p>Safe project</p><script>alert(1)</script>'},token=token)
    html=request(guest,'GET','/projects/atolye');assert '<p>Safe project</p>' in html and '<script>alert(1)</script>' not in html
    # Writes are validated against database/schema.php, identically on both engines.
-   r=js(admin,'PUT','/panel/api/pages/1',{'name':'ş'*51},token=token,status=422);assert r=={'error':'Invalid value: name'},r
-   js(admin,'PUT','/panel/api/pages/1',{'name':'ş'*50},token=token);assert js(admin,'GET','/panel/api/pages/1')['name']=='ş'*50
+   r=js(admin,'PUT','/panel/api/pages/1',{'name':'ş'*256},token=token,status=422);assert r=={'error':'Invalid value: name'},r
+   js(admin,'PUT','/panel/api/pages/1',{'name':'ş'*255},token=token);assert js(admin,'GET','/panel/api/pages/1')['name']=='ş'*255
    js(admin,'PUT','/panel/api/pages/1',{'type_id':'abc'},token=token,status=422)
    js(admin,'PUT','/panel/api/pages/1',{'type_id':''},token=token);assert db('SELECT type_id FROM pages WHERE id=1')[0]['type_id'] is None
    plid=db('SELECT id FROM page_lang WHERE row_id=1 AND lang_id=1')[0]['id']

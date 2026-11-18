@@ -7,7 +7,7 @@ return ['tables' => [
     'pages' => [
         'columns' => [
             'id' => ['type' => 'id'],
-            'name' => ['type' => 'varchar', 'length' => 50],
+            'name' => ['type' => 'varchar', 'length' => 255],
             'slug' => ['type' => 'varchar', 'length' => 255, 'binary' => true],
             'type_id' => ['type' => 'int'],
             'info' => ['type' => 'varchar', 'length' => 255],
@@ -174,7 +174,7 @@ return ['tables' => [
     'datas' => [
         'columns' => [
             'id' => ['type' => 'id'],
-            'name' => ['type' => 'varchar', 'length' => 50],
+            'name' => ['type' => 'varchar', 'length' => 255],
             'slug' => ['type' => 'varchar', 'length' => 255, 'binary' => true],
             'type_id' => ['type' => 'int'],
             'info' => ['type' => 'varchar', 'length' => 255],
