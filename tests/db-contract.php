@@ -191,7 +191,15 @@ function contractRun(PanelDbDialect $dialect, array $config, array $schema, ?arr
                     $stored = $db->execute_query('SELECT '.$columns.' FROM `'.$table.'` WHERE `id`=?', [$row['id']])->fetch_assoc();
                     contractAssert($stored === $row, $table.' row '.$row['id'].' differs from the seed');
                 }
-                $db->execute_query('INSERT INTO `'.$table.'` (`id`) VALUES (NULL)');
+                // Fill only the NOT NULL columns without a default (e.g. media.owner_table); everything else stays default.
+                $required = ['id' => null];
+                foreach ((require dirname(__DIR__).'/database/schema.php')['tables'][$table]['columns'] as $name => $column) {
+                    if ($name !== 'id' && ($column['nullable'] ?? true) === false && !array_key_exists('default', $column)) {
+                        $required[$name] = in_array($column['type'], ['int', 'tinyint'], true) ? 0 : '';
+                    }
+                }
+                $db->execute_query('INSERT INTO `'.$table.'` (`'.implode('`, `', array_keys($required)).'`) VALUES ('
+                    .implode(', ', array_fill(0, count($required), '?')).')', array_values($required));
                 contractAssert($db->insert_id === max(array_column($rows, 'id')) + 1, $table.' next id is not max(id)+1');
             }
         });

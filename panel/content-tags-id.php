@@ -108,7 +108,7 @@ if ($siteRequestId > 0 && $rowData = dbGetTableRow($siteRequest, $siteRequestId)
 
                 foreach ($typeFields as $field) {
 
-                  if ($siteRequestId <= 0 && in_array($field['Field'], ['image', 'icon'])) continue;
+                  if ($siteRequestId <= 0 && in_array($field['Field'], ['image_id', 'icon'])) continue;
 
                   if (file_exists("php/input-$field[Field].php")) {
 

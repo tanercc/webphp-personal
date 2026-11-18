@@ -68,8 +68,7 @@ $requestUrl = "/panel/api/self/$_SESSION[userId]";
 
               include "php/input-password.php";
 
-              $inputFieldKey = 'image';
-              include "php/input-image.php";
+              include "php/input-image_id.php";
 
               ?>
 

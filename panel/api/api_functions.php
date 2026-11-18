@@ -68,28 +68,3 @@ function getClientIp()
   $ip = $_SERVER['REMOTE_ADDR'] ?? '';
   return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : '';
 }
-
-function getImages($folder, $id, $selectedImage = '')
-{
-  $path = "../../uploads/files/$folder/$id/";
-  $ignore = ['.', '..'];
-  $result = [];
-
-  if (is_dir($path)) {
-    $dh = opendir($path);
-    while (false !== ($file = readdir($dh))) {
-      if (!in_array($file, $ignore)) {
-        if (
-          !is_dir($path . $file)
-          && ($selectedImage) != urldecode('/' . $path . $file)
-        ) {
-          $result[] = $file;
-        }
-      }
-    }
-  }
-
-  sort($result);
-
-  return $result;
-}

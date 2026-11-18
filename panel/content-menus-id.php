@@ -144,8 +144,7 @@ if ($siteRequestId > 0 && $rowData = dbGetTableRow($siteRequest, $siteRequestId)
 
                 if ($siteRequestId > 0) {
 
-                  $inputFieldKey = 'image';
-                  include "php/input-image.php";
+                  include "php/input-image_id.php";
                 }
 
                 include "php/input-is_active.php";

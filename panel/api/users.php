@@ -16,7 +16,7 @@ switch ($_SERVER["REQUEST_METHOD"]) {
   case "GET":
     //list
 
-    $fields = ['id', 'name', 'email', 'image', 'last_login', 'is_active', 'sort_order'];
+    $fields = ['id', 'name', 'email', 'image_id', 'last_login', 'is_active', 'sort_order'];
     $options = [];
     foreach ($_GET as $key => $value) {
       if ($value !== '') { $options[$key] = (string) $value; }

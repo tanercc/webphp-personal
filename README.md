@@ -39,7 +39,7 @@ This account is for the local demo only. Requests with a non-loopback `REMOTE_AD
 - `database/seed-base.php`: a neutral starter without portfolio data or a fixed user account. `database/seed.php`: fictional portfolio pages, navigation, settings, project/resume records, and a demo-only user. Never import a seed into a live database.
 - `tools/install.php`: builds a database from scratch and never resets an existing one. SQLite: temporary file, integrity/foreign-key checks, exclusive publish. MySQL: an existing empty database is required, an install lock is taken, and a failed run drops only its own tables.
 - `tools/verify.php`: checks vendor/theme hashes, integrity, and that the database structure equals `schema.php`.
-- `tools/seed-media.php`: copies the theme profile image and new sample project images into record folders without overwriting existing files.
+- `tools/seed-media.php`: copies the theme profile image and sample project images into `uploads/media/` (matching the seeded `media` rows) without overwriting existing files.
 - `storage/personal.sqlite`: the running SQLite database, excluded from Git and protected from HTTP access.
 
 There are no migrations: changing the data model means editing `schema.php` and the relevant seed, then installing a fresh database; a site with real data needs a separate plan first. Run `php tools/seed-media.php` for demo media. To back up a SQLite installation, stop the server and copy the database file and `uploads/` together; back up MySQL with your usual dump tooling together with `uploads/`.
@@ -74,7 +74,7 @@ No theme/module engine was added. Personal is assembled manually from PHP partia
 
 ## Contact and media
 
-The contact form uses server-side validation, CSRF, a honeypot, and an IP limit of 5 messages per 15 minutes. Messages (name <= 50, message 10-255 characters) are stored in the database; no email or paid SB Forms service is used. Filemanager retains record-level scope: only the edited record's files are shown. Quick upload, remote URL loading, active-document uploads, and archive extraction remain disabled.
+The contact form uses server-side validation, CSRF, a honeypot, and an IP limit of 5 messages per 15 minutes. Messages (name <= 50, message 10-255 characters) are stored in the database; no email or paid SB Forms service is used. Record images and PDFs are uploaded in each record's Media card (`media` table, per-language alt/caption, main image via `image_id`). Filemanager is kept for CKEditor images and icons and retains record-level scope: only the edited record's files are shown. Quick upload, remote URL loading, active-document uploads, and archive extraction remain disabled.
 
 ## ServBay
 

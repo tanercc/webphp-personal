@@ -57,8 +57,9 @@ function panelAuthenticate(array $input, callable $captcha, callable $findUser, 
 
 function panelFindLoginUser(PanelDbConnection $db, string $email): ?array
 {
-    $statement = $db->prepare('SELECT u.id, u.name, u.password, u.image, u.is_active, u.deleted, t.slug AS type
+    $statement = $db->prepare('SELECT u.id, u.name, u.password, m.path AS image, u.is_active, u.deleted, t.slug AS type
         FROM users u INNER JOIN usertypes t ON t.id = u.type_id
+        LEFT JOIN media m ON m.id = u.image_id AND m.owner_id = u.id AND m.deleted = 0 AND m.is_active = 1
         WHERE u.email = ? AND u.is_active = 1 AND u.deleted = 0
           AND t.is_active = 1 AND t.deleted = 0 LIMIT 1');
     if (!$statement) {

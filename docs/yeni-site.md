@@ -56,7 +56,8 @@ Generated projects contain none of Personal's `templates/pages/`, CSS, images, o
 | Hierarchy/categories | `cats`, `datas.cat_id` | Category default: `cats.template_id`; record override: `datas.template_id`. |
 | Navigation | `menutypes` + `menus` + `menu_lang` | Allowlisted URL schemes; preserve ordering, active status, and soft deletion. |
 | Site name, contact details, footer | `variables` + `variable_lang` | Stable keys, panel-managed values, context-appropriate encoding. |
-| Media | `uploads/files/{resource}/{id}` | Save a new record first; the picker opens only that record's folder. |
+| Record media | `media` + `media_lang`, files in `uploads/media/{table}/{id}` | Save a new record first; upload in its Media card, set alt text, pick the main image (`image_id`). |
+| Editor images | `uploads/files/{resource}/{id}` | CKEditor's file manager opens only that record's folder. |
 
 The helpers `sitePage($slug)`, `siteRecords($typeSlug)`, `setting($key)`, and `siteRows($sql,$params)` are in `app/bootstrap.php`. Their default visitor language is Turkish (`lang_id=1`); additional language routes must be implemented separately. Empty translation fields fall back to general values. Use `e()` for HTML text/attributes and `panelRichHtml()` for rich HTML.
 

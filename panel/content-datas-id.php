@@ -125,10 +125,7 @@ if ($siteRequestId > 0 && $rowData = dbGetTableRow($siteRequest, $siteRequestId)
                   $inputFieldKey = 'icon';
                   include "php/input-image.php";
 
-                  $inputFieldKey = 'image';
-                  include "php/input-image.php";
-
-                  include "php/input-file.php";
+                  include "php/input-image_id.php";
                 }
 
                 $inputFieldKey = 'video';

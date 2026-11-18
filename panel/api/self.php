@@ -16,7 +16,7 @@ switch ($_SERVER["REQUEST_METHOD"]) {
     $_PUT = $apiInput;
 
     $fields = [];
-    $keys = ['name', 'email', 'password', 'image'];
+    $keys = ['name', 'email', 'password', 'image_id'];
     foreach ($_PUT as $key => $value) {
       if (in_array($key, $keys)) {
         $fields[$key] = ($key == 'password') ?
@@ -26,6 +26,10 @@ switch ($_SERVER["REQUEST_METHOD"]) {
     }
 
     if (apiDbUpdateTableRow('users', $_SESSION["userId"], $fields)) {
+      if (array_key_exists('image_id', $fields)) {
+        $image = apiDbQuery('SELECT m.path FROM users u JOIN media m ON m.id = u.image_id WHERE u.id = ?', [(int) $_SESSION['userId']])->fetch_assoc();
+        $_SESSION['userImage'] = $image['path'] ?? '/panel/img/brand.svg';
+      }
       http_response_code(200);
       exit(json_encode(['id' => $apiRequestId]));
     } else {

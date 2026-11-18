@@ -7,7 +7,7 @@ require_once __DIR__ . '/../include/db_schema.php';
 function apiResources(): array
 {
     return ['pages', 'pagetypes', 'sliders', 'slidertypes', 'menus', 'menutypes',
-        'datas', 'datatypes', 'cats', 'tags', 'users', 'variables', 'captions', 'templates'];
+        'datas', 'datatypes', 'cats', 'tags', 'users', 'variables', 'templates'];
 }
 
 function apiColumnNames(string $table): array
@@ -32,7 +32,7 @@ function apiAuthorize(string $route, string $method, int $id, array $session, ar
         || !filter_var($session['userId'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]])) {
         throw new RuntimeException('Authentication required', 401);
     }
-    $special = ['lang' => ['POST', 'PUT'], 'select2' => ['POST'], 'selectfile' => ['POST'], 'self' => ['PUT']];
+    $special = ['lang' => ['POST', 'PUT'], 'select2' => ['POST'], 'self' => ['PUT'], 'media' => ['GET', 'POST', 'PUT', 'DELETE']];
     if (!in_array($route, apiResources(), true) && !isset($special[$route])) {
         throw new RuntimeException('Resource not found', 404);
     }
@@ -52,7 +52,7 @@ function apiTranslationTable($table, array $session, array $permissions): string
 {
     $map = ['page_lang' => 'pages', 'slider_lang' => 'sliders', 'menu_lang' => 'menus',
         'data_lang' => 'datas', 'datatype_lang' => 'datatypes', 'cat_lang' => 'cats',
-        'tag_lang' => 'tags', 'variable_lang' => 'variables', 'caption_lang' => 'captions'];
+        'tag_lang' => 'tags', 'variable_lang' => 'variables'];
     $role = $session['userType'] ?? '';
     if (!is_string($table) || !isset($map[$table]) || !in_array($map[$table], $permissions[$role] ?? [], true)) {
         throw new RuntimeException('Forbidden translation resource', 403);
@@ -65,7 +65,7 @@ function apiLookupTable($table, array $session, array $permissions): string
     $relations = ['pages' => ['pagetypes'], 'sliders' => ['slidertypes'],
         'menus' => ['menutypes', 'pages', 'datas', 'datatypes', 'cats', 'tags'],
         'datas' => ['datatypes', 'datas', 'templates'], 'cats' => ['datatypes', 'cats', 'templates'],
-        'tags' => ['cats'], 'users' => ['usertypes'], 'captions' => ['datas']];
+        'tags' => ['cats'], 'users' => ['usertypes']];
     $allowed = ['langs'];
     foreach ($permissions[$session['userType'] ?? ''] ?? [] as $resource) {
         if (in_array($resource, apiResources(), true)) {
@@ -83,24 +83,24 @@ function apiWritableFields(string $table): array
 {
     $common = ['name', 'is_active', 'sort_order'];
     $fields = [
-        'pages' => ['slug', 'type_id', 'info', 'icon', 'image', 'video', 'file', 'link', 'include'],
-        'pagetypes' => ['template'], 'sliders' => ['type_id', 'info', 'image'], 'slidertypes' => [],
-        'menus' => ['type_id', 'image', 'link', 'parent_id', 'page_id', 'data_id', 'datatype_id', 'cat_id', 'tag_id'],
+        'pages' => ['slug', 'type_id', 'info', 'icon', 'image_id', 'video', 'link', 'include'],
+        'pagetypes' => ['template'], 'sliders' => ['type_id', 'info', 'image_id'], 'slidertypes' => [],
+        'menus' => ['type_id', 'image_id', 'link', 'parent_id', 'page_id', 'data_id', 'datatype_id', 'cat_id', 'tag_id'],
         'menutypes' => [],
-        'datas' => ['slug', 'type_id', 'info', 'icon', 'image', 'video', 'file', 'link', 'writer', 'write_at', 'coordinate', 'include', 'cat_id', 'parent_id',
+        'datas' => ['slug', 'type_id', 'info', 'icon', 'image_id', 'video', 'link', 'writer', 'write_at', 'coordinate', 'include', 'cat_id', 'parent_id',
             'column_1', 'column_2', 'column_3', 'column_4', 'column_5', 'column_6', 'column_7', 'column_8', 'column_9', 'template_id'],
-        'templates' => ['code'], 'datatypes' => ['slug'], 'cats' => ['slug', 'type_id', 'image', 'file', 'link', 'parent_id', 'template_id'],
-        'tags' => ['slug', 'type_id', 'icon', 'image', 'cat_id'], 'captions' => ['type_id', 'data_id', 'filename'],
-        'variables' => [], 'users' => ['email', 'password', 'image', 'type_id', 'lang_id'],
+        'templates' => ['code'], 'datatypes' => ['slug'], 'cats' => ['slug', 'type_id', 'image_id', 'link', 'parent_id', 'template_id'],
+        'tags' => ['slug', 'type_id', 'icon', 'image_id', 'cat_id'],
+        'variables' => [], 'users' => ['email', 'password', 'image_id', 'type_id', 'lang_id'],
     ];
-    if ($table === 'self') { return ['name', 'email', 'password', 'image']; }
+    if ($table === 'self') { return ['name', 'email', 'password', 'image_id']; }
     if (in_array($table, ['page_lang', 'data_lang', 'cat_lang'], true)) {
-        return ['name', 'slug', 'title', 'content', 'image', 'row_id', 'lang_id'];
+        return ['name', 'slug', 'title', 'content', 'row_id', 'lang_id'];
     }
-    $translations = ['slider_lang' => ['name', 'title', 'content', 'image'],
-        'menu_lang' => ['name', 'link', 'title', 'image', 'is_active'],
+    $translations = ['slider_lang' => ['name', 'title', 'content'],
+        'menu_lang' => ['name', 'link', 'title', 'is_active'],
         'datatype_lang' => ['name', 'slug'], 'tag_lang' => ['name', 'slug'],
-        'caption_lang' => ['title'], 'variable_lang' => ['name']];
+        'variable_lang' => ['name']];
     if (isset($translations[$table])) { return array_merge($translations[$table], ['row_id', 'lang_id']); }
     if (!isset($fields[$table])) { throw new RuntimeException('Resource not found', 404); }
     return array_merge($common, $fields[$table]);
@@ -141,7 +141,7 @@ function apiValidateOptions(string $table, array $options, array $columns): arra
 {
     $relations = ['datas' => ['typeTable' => 'datatypes'], 'menus' => ['typeTable' => 'menutypes'],
         'sliders' => ['typeTable' => 'slidertypes'], 'users' => ['typeTable' => 'usertypes'],
-        'captions' => ['typeTable' => 'datas'], 'tags' => ['catTable' => 'cats']];
+        'tags' => ['catTable' => 'cats']];
     $result = [];
     $filterable = array_diff($columns, ['password', 'created_at', 'updated_at']);
     foreach ($options as $key => $value) {
@@ -168,4 +168,19 @@ function apiValidateOptions(string $table, array $options, array $columns): arra
         $result[$key] = $value;
     }
     return $result;
+}
+
+/** Record tables that can own media rows (`media.owner_table`). */
+function apiMediaOwnerTables(): array
+{
+    return ['pages', 'sliders', 'menus', 'datas', 'cats', 'tags', 'users'];
+}
+
+/** The caller may manage media of a record they may edit: its resource role, or their own profile via `self`. */
+function apiMediaOwnerAllowed(string $table, int $id, array $session, array $permissions): bool
+{
+    $allowed = $permissions[$session['userType'] ?? ''] ?? [];
+    if (!in_array($table, apiMediaOwnerTables(), true)) { return false; }
+    return in_array($table, $allowed, true)
+        || ($table === 'users' && $id === (int) ($session['userId'] ?? 0) && in_array('self', $allowed, true));
 }

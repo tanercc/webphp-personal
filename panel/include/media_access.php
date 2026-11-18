@@ -38,7 +38,7 @@ function panelMediaRecordScope(array $permissions): string
         throw new RuntimeException('Invalid media scope', 403);
     }
     $resource = $match[1];
-    $resources = ['pages','sliders','menus','datas','datatypes','cats','tags','users','variables','captions'];
+    $resources = ['pages','sliders','menus','datas','datatypes','cats','tags','users','variables'];
     $allowed = $permissions[$_SESSION['userType'] ?? ''] ?? [];
     $ownProfile = $resource === 'users' && $match[2] === (string) ($_SESSION['userId'] ?? '') && in_array('self', $allowed, true);
     if (!in_array($resource, $resources, true) || (!in_array($resource, $allowed, true) && !$ownProfile)) {

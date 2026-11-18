@@ -37,8 +37,8 @@ function installBuild(PanelDbConnection $db, string $root, string $profile, arra
             }
         }
         if ($profile === 'starter') {
-            $db->execute_query('INSERT INTO `users` (`name`,`email`,`password`,`type_id`,`lang_id`,`image`) VALUES (?,?,?,1,1,?)',
-                ['Yönetici', $email, password_hash($password, PASSWORD_DEFAULT), '/panel/img/brand.svg']);
+            $db->execute_query('INSERT INTO `users` (`name`,`email`,`password`,`type_id`,`lang_id`) VALUES (?,?,?,1,1)',
+                ['Yönetici', $email, password_hash($password, PASSWORD_DEFAULT)]);
             $db->execute_query('UPDATE `variable_lang` SET `name`=? WHERE `row_id`=1 AND `lang_id`=1', [$installation['name']]);
         }
         $db->commit();
@@ -69,7 +69,7 @@ if ($profile === 'starter' && (!filter_var($email, FILTER_VALIDATE_EMAIL) || str
 }
 $password = is_string($password) ? $password : '';
 if ($config['driver'] === 'sqlite' && !is_dir(dirname($path))) { installFail('Database parent directory does not exist.'); }
-foreach ([$root.'/storage', $root.'/storage/sessions', $root.'/uploads/files', $root.'/uploads/thumbs'] as $directory) {
+foreach ([$root.'/storage', $root.'/storage/sessions', $root.'/uploads/files', $root.'/uploads/media', $root.'/uploads/thumbs'] as $directory) {
     if (!is_dir($directory) && !mkdir($directory, 0750, true)) { installFail('Cannot prepare runtime directories.'); }
 }
 

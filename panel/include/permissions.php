@@ -17,7 +17,6 @@ $sitePermissions = [
     'logout',
     'lang',
     'select2',
-    'selectfile',
 
     //page
     'pages',
@@ -38,7 +37,6 @@ $sitePermissions = [
     //setting
     'users',
     'variables',
-    'captions',
     'self',
   ],
   'user' => [

@@ -3,6 +3,7 @@
 /config/config.runtime.php
 /uploads/files/*
 /uploads/thumbs/*
+/uploads/media/*
 /upstream/
 /.build*
 /graft/

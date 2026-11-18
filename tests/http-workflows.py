@@ -59,6 +59,20 @@ def request(c,method,path,fields=None,token=None,status=200):
  return body
 
 def js(*args,**kwargs):return json.loads(request(*args,**kwargs))
+def upload(c,owner_table,owner_id,name,content,token=None,status=200):
+ """Multipart POST to the media endpoint, like the panel's FormData upload."""
+ global count
+ boundary='----cms'+secrets.token_hex(8);parts=b''
+ for key,value in (('owner_table',owner_table),('owner_id',str(owner_id))):
+  parts+=('--%s\r\nContent-Disposition: form-data; name="%s"\r\n\r\n%s\r\n'%(boundary,key,value)).encode()
+ parts+=('--%s\r\nContent-Disposition: form-data; name="file"; filename="%s"\r\nContent-Type: application/octet-stream\r\n\r\n'%(boundary,name)).encode()+content+('\r\n--%s--\r\n'%boundary).encode()
+ headers={'Content-Type':'multipart/form-data; boundary='+boundary}
+ if token:headers['X-CSRF-Token']=token
+ try:r=c.open(urllib.request.Request(base+'/panel/api/media',data=parts,headers=headers,method='POST'),timeout=30)
+ except urllib.error.HTTPError as e:r=e
+ body=r.read().decode('utf-8');count+=1
+ assert r.code==status,('upload',name,r.code,status,scrub(body[:250]))
+ return json.loads(body)
 def csrf(html):
  m=re.search(r'name="csrf_token" value="([^"]+)"',html) or re.search(r'name="csrf-token" content="([^"]+)"',html)
  assert m,'Missing CSRF';return m[1]
@@ -73,7 +87,8 @@ with tempfile.TemporaryDirectory(prefix='personal-'+DRIVER+'-test-') as tmp, scr
  with socket.socket() as sock:sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
  base='http://127.0.0.1:'+str(port)
  with open(tmp/'server.log','wb') as log:
-  server=subprocess.Popen([PHP,'-d','display_errors=0','-S','127.0.0.1:'+str(port),'-t',str(ROOT),str(ROOT/'router.php')],cwd=ROOT,env=env,stdout=log,stderr=log)
+  server=subprocess.Popen([PHP,'-d','display_errors=0','-d','upload_max_filesize=12M','-d','post_max_size=16M','-S','127.0.0.1:'+str(port),'-t',str(ROOT),str(ROOT/'router.php')],cwd=ROOT,env=env,stdout=log,stderr=log)
+  uploaded=[]
   try:
    for attempt in range(60):
     try:urllib.request.urlopen(base,timeout=1).close();break
@@ -94,7 +109,7 @@ with tempfile.TemporaryDirectory(prefix='personal-'+DRIVER+'-test-') as tmp, scr
    login=request(admin,'GET','/panel/');token=csrf(login)
    dashboard=request(admin,'POST','/panel/',{'email':'admin@personal.test','password':'PersonalDemo!2026','csrf_token':token});assert 'İçerikleri düzenleyin' in dashboard
    token=csrf(dashboard)
-   for resource in ['pages','pagetypes','datas','datatypes','cats','tags','templates','menus','menutypes','sliders','slidertypes','variables','captions','users']:
+   for resource in ['pages','pagetypes','datas','datatypes','cats','tags','templates','menus','menutypes','sliders','slidertypes','variables','users']:
     data=js(admin,'GET','/panel/api/'+resource+'?pageIndex=1&pageSize=10&sortField=id&sortOrder=ASC');assert 'data' in data and 'itemsCount' in data
     request(admin,'GET','/panel/'+resource)
    for path in ['/panel/pages/1','/panel/pages/1/tr','/panel/datas/1','/panel/datas/1/tr','/panel/cats/new','/panel/datas/new','/panel/users/1','/panel/variables/1','/panel/messages']:
@@ -168,6 +183,44 @@ with tempfile.TemporaryDirectory(prefix='personal-'+DRIVER+'-test-') as tmp, scr
    js(editor,'GET','/panel/api/datas')
    js(editor,'GET','/panel/api/users',status=403)
    js(editor,'GET','/panel/api/templates',status=403)
+   # Record media: own upload endpoint, DB row is authoritative, main image must belong to the same record.
+   html=request(guest,'GET','/projects');assert '/uploads/media/datas/1/studio.png' in html and 'Atölye portföy arayüzü ekran görüntüsü' in html
+   assert 'id="media-list"' in request(admin,'GET','/panel/datas/1')
+   PNG=(ROOT/'assets/project-rota.png').read_bytes();PDF=b'%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n'
+   mid=upload(admin,'datas','1','../shot.png',PNG,token)['id'];row=db('SELECT * FROM media WHERE id=?',(mid,))[0];uploaded.append(row['path'])
+   assert isinstance(mid,str) and row['path'].startswith('/uploads/media/datas/1/') and 'shot' not in row['path'] and row['path'].endswith('.png')
+   assert row['original_name']=='shot.png' and row['mime']=='image/png' and int(row['width'])==300 and int(row['height'])==400 and (ROOT/row['path'].lstrip('/')).is_file()
+   pid=upload(admin,'datas','1','brief.pdf',PDF,token)['id'];prow=db('SELECT * FROM media WHERE id=?',(pid,))[0];uploaded.append(prow['path'])
+   assert prow['mime']=='application/pdf' and prow['width'] is None
+   for name,content in [('fake.png',PDF),('image.pdf',PNG),('vector.svg',b'<svg xmlns="http://www.w3.org/2000/svg"/>'),('script.php',b'<?php echo 1;'),('empty.png',b'')]:
+    upload(admin,'datas','1',name,content,token,status=422)
+   assert upload(admin,'datas','1','big.png',PNG+bytes(10*1024*1024),token,status=422)=={'error':'File too large'}
+   upload(admin,'datas','1','shot.png',PNG,status=403)
+   upload(admin,'datas','999','shot.png',PNG,token,status=404)
+   upload(admin,'variables','1','shot.png',PNG,token,status=422)
+   upload(editor,'users','1','shot.png',PNG,csrf(editor_home),status=403)
+   js(editor,'GET','/panel/api/media?owner_table=users&owner_id=1',status=403)
+   listed=js(editor,'GET','/panel/api/media?owner_table=datas&owner_id=1')
+   assert listed['itemsCount']==3 and all(isinstance(item['id'],str) for item in listed['data'])
+   js(admin,'PUT','/panel/api/media/'+mid,{'lang_id':'1','title':'Shot','alt':'First alt'},token=token)
+   js(admin,'PUT','/panel/api/media/'+mid,{'lang_id':'1','alt':'Panel alt <b>text</b>','sort_order':'1'},token=token)
+   js(admin,'PUT','/panel/api/media/'+mid,{'lang_id':'9','alt':'x'},token=token,status=422)
+   js(admin,'PUT','/panel/api/media/'+mid,{'path':'/etc/passwd'},token=token,status=422)
+   item=[i for i in js(admin,'GET','/panel/api/media?owner_table=datas&owner_id=1')['data'] if i['id']==mid][0]
+   assert item['lang']['1']=={'title':'Shot','alt':'Panel alt <b>text</b>','caption':''} and item['sort_order']=='1',item
+   r=js(admin,'PUT','/panel/api/datas/4',{'image_id':mid},token=token,status=422);assert r=={'error':'Invalid value: image_id'},r
+   js(admin,'PUT','/panel/api/datas/1',{'image_id':mid},token=token)
+   html=request(guest,'GET','/projects/atolye');assert row['path'] in html and 'Panel alt &lt;b&gt;text&lt;/b&gt;' in html
+   js(admin,'PUT','/panel/api/media/'+mid,{'is_active':'0'},token=token)
+   assert db('SELECT image_id FROM datas WHERE id=1')[0]['image_id'] is None
+   js(admin,'PUT','/panel/api/datas/1',{'name':'Atölye — Dijital portföy'},token=token)
+   js(admin,'PUT','/panel/api/media/'+mid,{'is_active':'1'},token=token);js(admin,'PUT','/panel/api/datas/1',{'image_id':mid},token=token)
+   js(admin,'DELETE','/panel/api/media/'+mid,token=token)
+   assert db('SELECT image_id FROM datas WHERE id=1')[0]['image_id'] is None and int(db('SELECT deleted FROM media WHERE id=?',(mid,))[0]['deleted'])==1
+   js(admin,'PUT','/panel/api/datas/1',{'image_id':mid},token=token,status=422)
+   js(admin,'PUT','/panel/api/media/'+mid,{'sort_order':'2'},token=token,status=404)
+   uid=upload(admin,'users','1','me.png',PNG,token)['id'];uploaded.append(db('SELECT path FROM media WHERE id=?',(uid,))[0]['path'])
+   js(admin,'PUT','/panel/api/self',{'image_id':uid},token=token);assert str(db('SELECT image_id FROM users WHERE id=1')[0]['image_id'])==uid
    # Logout stays a CSRF protected POST and invalidates API access.
    r=js(admin,'PUT','/panel/api/self',{'name':'X','type_id':'1'},token=token,status=422);assert r=={'error':'Invalid field'},r
    assert db('SELECT name FROM users WHERE email=?',('admin@personal.test',))[0]['name']!='X'
@@ -176,9 +229,10 @@ with tempfile.TemporaryDirectory(prefix='personal-'+DRIVER+'-test-') as tmp, scr
    request(admin,'GET','/panel/logout',status=403)
    request(admin,'POST','/panel/logout',{'csrf_token':token})
    js(admin,'GET','/panel/api/pages',status=401)
-   print('PASS:',count,'real HTTP requests; '+DRIVER+' install, panel login/list/forms/CRUD/translations, public rendering, SRI, contact, CSRF, rate limit and private-file denial')
+   print('PASS:',count,'real HTTP requests; '+DRIVER+' install, panel login/list/forms/CRUD/translations, public rendering, SRI, contact, record media, CSRF, rate limit and private-file denial')
   finally:
    server.terminate();server.wait(timeout=10)
+   for path in uploaded:(ROOT/path.lstrip('/')).unlink(missing_ok=True)
   text=(tmp/'server.log').read_text(errors='replace')
   assert not re.search(r'PHP (?:Fatal|Warning|Deprecated)|CMS database operation failed',text),scrub(text[-2000:])
 print('PASS: disposable '+DRIVER+' database, sessions and test server removed; demo content unchanged')

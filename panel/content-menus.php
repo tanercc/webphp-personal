@@ -120,12 +120,6 @@ $selectedType = $_GET['type_id'] ?? reset($menuTypes)['id'];
           type: "text",
           width: 100
         }, {
-          name: "image",
-          title: "Image",
-          type: "text",
-          width: 150,
-          filtering: false
-        }, {
           name: "is_active",
           title: "Aktifmi",
           type: "checkbox",

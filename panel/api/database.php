@@ -4,7 +4,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 function apiDbTable(string $table): string
 {
     $extra = ['page_lang', 'slider_lang', 'menu_lang', 'data_lang', 'datatype_lang',
-        'cat_lang', 'tag_lang', 'variable_lang', 'caption_lang', 'langs', 'usertypes'];
+        'cat_lang', 'tag_lang', 'variable_lang', 'langs', 'usertypes', 'media', 'media_lang'];
     if (!in_array($table, array_merge(apiResources(), $extra), true)) {
         throw new RuntimeException('Resource not found', 404);
     }
@@ -60,7 +60,7 @@ function apiDbGetTableData(string $table, ?array $fields = null, array $options 
     $select = implode(',', array_map(static fn ($field) => "t.`$field`", $selected));
     $relation = $options['typeTable'] ?? $options['catTable'] ?? null;
     if ($relation !== null) {
-        $foreign = isset($options['catTable']) ? 'cat_id' : ($table === 'captions' ? 'data_id' : 'type_id');
+        $foreign = isset($options['catTable']) ? 'cat_id' : 'type_id';
         if (!in_array($foreign, $columns, true)) { throw new RuntimeException('Invalid relation', 422); }
         $select .= ',(SELECT r.name FROM ' . apiDbTable($relation) . " r WHERE r.id=t.`$foreign`) AS type";
     }
@@ -69,8 +69,8 @@ function apiDbGetTableData(string $table, ?array $fields = null, array $options 
     if (in_array('deleted', $columns, true)) { $where[] = 't.deleted = ?'; $values[] = $options['deleted'] ?? 0; }
     foreach ($options as $key => $value) {
         if ($key === 'q') {
-            $searchField = in_array('name', $columns, true) ? 'name' : 'filename';
-            $where[] = "t.`$searchField` LIKE ? ESCAPE '!'";
+            if (!in_array('name', $columns, true)) { throw new RuntimeException('Invalid query field', 422); }
+            $where[] = "t.`name` LIKE ? ESCAPE '!'";
             $values[] = dbLikePrefix((string) $value);
         }
         elseif ($key !== 'deleted' && in_array($key, $columns, true)) { $where[] = "t.`$key` = ?"; $values[] = $value; }
@@ -145,6 +145,11 @@ function apiDbNormalizeFields(string $table, array $fields, bool $update, int $i
             $template = apiDbQuery('SELECT code FROM templates WHERE id=?', [$result['template_id']])->fetch_assoc();
             if (($template['code'] ?? '') === 'category') { throw new RuntimeException('Select a category', 422); }
         }
+    }
+    // A main image must be an active media row owned by this same record; a new record has none yet.
+    if (array_key_exists('image_id', $fields) && $fields['image_id'] !== null && (!$update
+        || !apiDbQuery('SELECT id FROM media WHERE id=? AND owner_table=? AND owner_id=? AND deleted=0 AND is_active=1', [(int) $fields['image_id'], $table, $id])->fetch_assoc())) {
+        throw new RuntimeException('Invalid value: image_id', 422);
     }
     if ($table === 'templates' && isset($fields['code'])) {
         $existing = apiDbQuery('SELECT id FROM templates WHERE code=? AND id<>?', [$fields['code'], $id])->fetch_assoc();

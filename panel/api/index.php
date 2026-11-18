@@ -45,8 +45,8 @@ try {
         unset($apiInput['table']);
         $apiInput = apiValidateOptions($table, $apiInput, apiColumnNames($table));
         $apiInput['table'] = $table;
-    } elseif ($apiRequest === 'selectfile') {
-        $apiInput = ['data_id' => (string) apiPositiveId($apiInput['data_id'] ?? null)];
+    } elseif ($apiRequest === 'media') {
+        // Owner, upload and translation rules are checked in media.php.
     } else {
         $table = $apiRequest === 'self' ? 'users' : $apiRequest;
         $columns = apiColumnNames($table);
@@ -60,7 +60,7 @@ try {
         if ($method === 'DELETE') { apiPositiveId($apiRequestId); }
     }
     $_POST = $apiInput;
-    $handlers = ['lang', 'select2', 'selectfile', 'self', 'users', 'variables'];
+    $handlers = ['lang', 'select2', 'media', 'self', 'users', 'variables'];
     require __DIR__ . '/' . (in_array($apiRequest, $handlers, true) ? $apiRequest : 'request') . '.php';
 } catch (Throwable $error) {
     $status = $error instanceof RuntimeException && in_array($error->getCode(), [401, 403, 404, 405, 422], true)

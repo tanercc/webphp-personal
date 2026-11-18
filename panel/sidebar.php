@@ -231,13 +231,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
                   </a>
                 </li>
 
-                <li class="nav-item">
-                  <a href="<?= panelHtml(url('captions')) ?>" class="nav-link <?= $siteRequest == 'captions' ? 'active' : '' ?>">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>Başlıklar</p>
-                  </a>
-                </li>
-
             </ul>
           </li>
         <?php endif ?>

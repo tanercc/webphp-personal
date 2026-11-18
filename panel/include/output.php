@@ -30,13 +30,6 @@ function panelMediaUrl($value): string
     return $url;
 }
 
-function panelFilePreviewUrl($id, string $filename): string
-{
-    if (!is_int($id) && !is_string($id)) { return ''; }
-    if (!ctype_digit((string) $id) || (int) $id < 1 || strpbrk($filename, "/\\\0") !== false) { return ''; }
-    return '/uploads/files/datas/' . (int) $id . '/' . rawurlencode($filename);
-}
-
 function panelDateValue($value): string
 {
     if (!is_string($value) || trim($value) === '' || $value === '0') { return ''; }

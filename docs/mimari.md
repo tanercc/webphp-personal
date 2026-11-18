@@ -19,7 +19,8 @@
 | CRUD / pagination / translations | `panel/api/database.php`; `request.php`, `lang.php` |
 | Form fields | `panel/content-*-id.php`, `panel/php/input-*.php`, `config/panel-fields.php` |
 | Users / roles / sessions | `panel/include/login.php`, `login_security.php`, `permissions.php`, `session.php`, `csrf.php` |
-| Record-scoped file selection | `panel/include/media_access.php`, `panel/plugins/filemanager/config/config.php` |
+| Record media (upload, alt/caption, main image) | `panel/api/media.php`, `panel/php/input-image_id.php`, `media`/`media_lang` in `schema.php` |
+| CKEditor/icon file selection | `panel/include/media_access.php`, `panel/plugins/filemanager/config/config.php` |
 | Safe output | `panel/include/output.php`, `rich_html.php`; `e`, `panelHtml`, `panelRichHtml` |
 | HTTP access boundaries | `.htaccess`, `panel/.htaccess`, `panel/api/.htaccess`, `router.php`, `uploads/.htaccess` |
 | Package integrity | `panel/plugins/DEPENDENCIES.json`, `tools/verify.php` |
@@ -29,7 +30,8 @@
 - Visitor: router/rewrite → `index.php` → `app/bootstrap.php` → parameterized read → allowed PHP template.
 - Panel: `panel/index.php` → configuration/database/session/role → list or record form.
 - API: `panel/api/index.php` → session/role/method/CSRF → table/field/filter permissions → database adapter → JSON.
-- Media: Filemanager entry points → shared session/role/CSRF → `RF.subfolder` resource/record boundary → file operation.
+- Record media: `panel/api/index.php` → session/role/CSRF → owner record edit right → type/size checks → `uploads/media/<table>/<id>/` + `media` row. Site reads join `media`/`media_lang` for `image`/`image_alt` in the same query.
+- Editor files: Filemanager entry points → shared session/role/CSRF → `RF.subfolder` resource/record boundary → file operation.
 
 Panel forms use column types and defaults from `schema.php`. The adapter covers only the legacy result interface currently used by the application. Writes from panel/API/contact are validated against `schema.php` (`panelValidateWrite`, 422 `Invalid value: <column>`) on both engines. Driver selection: `config/site.php` `database` plus `PANEL_DB_*` env overrides; the MySQL password only via env or `config/config.runtime.php`. MySQL >= 8.0.19 (utf8mb4, InnoDB, `utf8mb4_bin` on slug/code/email/limit_key); MariaDB unsupported.
 

@@ -118,12 +118,6 @@ $selectedType = $_GET['type_id'] ?? null;
           type: "text",
           width: 200
         }, {
-          name: "image",
-          title: "Image",
-          type: "text",
-          width: 150,
-          filtering: false
-        }, {
           name: "is_active",
           title: "Aktifmi",
           type: "checkbox",
