@@ -5,9 +5,9 @@ if(($_SERVER['REQUEST_METHOD']??'GET')==='POST'){
  if(!panelCsrfValid($_SERVER,$_POST)){http_response_code(403);$contactError='Oturum doğrulanamadı. Sayfayı yenileyip tekrar deneyin.';}
  else{
   $values=[];foreach(['name','email','phone','message','website'] as $key){$values[$key]=is_string($_POST[$key]??'')?trim($_POST[$key]??''):'';}
-  if($values['website']!==''||mb_strlen($values['name'])<2||mb_strlen($values['name'])>50||!filter_var($values['email'],FILTER_VALIDATE_EMAIL)||strlen($values['email'])>254||strlen($values['phone'])>50||mb_strlen($values['message'])<10||mb_strlen($values['message'])>5000){http_response_code(422);$contactError='Ad, geçerli e-posta ve en az 10 karakterlik bir mesaj girin.';}
+  if($values['website']!==''||mb_strlen($values['name'])<2||mb_strlen($values['name'])>50||!filter_var($values['email'],FILTER_VALIDATE_EMAIL)||strlen($values['email'])>254||strlen($values['phone'])>50||mb_strlen($values['message'])<10||mb_strlen($values['message'])>255){http_response_code(422);$contactError='Ad (en fazla 50 karakter), geçerli e-posta ve 10–255 karakterlik bir mesaj girin.';}
   else{
-   try{$row=panelValidateWrite('datas',['name'=>$values['name'],'info'=>$values['message'],'column_1'=>$values['email'],'column_2'=>$values['phone']]);}catch(RuntimeException $error){$row=null;http_response_code(422);$contactError='Ad, geçerli e-posta ve en az 10 karakterlik bir mesaj girin.';}
+   try{$row=panelValidateWrite('datas',['name'=>$values['name'],'info'=>$values['message'],'column_1'=>$values['email'],'column_2'=>$values['phone']]);}catch(RuntimeException $error){$row=null;http_response_code(422);$contactError='Ad (en fazla 50 karakter), geçerli e-posta ve 10–255 karakterlik bir mesaj girin.';}
    if($row!==null)try{
     $conn->begin_transaction();$key=hash('sha256',$_SERVER['REMOTE_ADDR']??'');$window=intdiv(time(),900);
     $limit=$conn->execute_query('SELECT `window_start`,`hits` FROM `contact_limits` WHERE `limit_key`=?',[$key])->fetch_assoc();

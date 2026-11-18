@@ -147,8 +147,11 @@ with tempfile.TemporaryDirectory(prefix='personal-'+DRIVER+'-test-') as tmp, scr
    request(guest,'POST','/contact',{'name':'Test visitor','email':'visitor@example.test','message':'Synthetic contact message','csrf_token':'wrong'},status=403)
    request(guest,'POST','/contact',{'name':'Test','email':'bad','message':'short','csrf_token':contact_token},status=422)
    long={'name':'ş'*51,'email':'visitor@example.test','phone':'','message':'Synthetic contact message','website':'','csrf_token':contact_token}
-   assert 'Ad, geçerli e-posta ve en az 10 karakterlik bir mesaj girin.' in request(guest,'POST','/contact',long,status=422)
-   fields={'name':'ş'*50,'email':'visitor@example.test','phone':'','message':'<b>Literal message</b> saved in SQLite.','website':'','csrf_token':contact_token}
+   assert 'Ad (en fazla 50 karakter), geçerli e-posta ve 10–255 karakterlik bir mesaj girin.' in request(guest,'POST','/contact',long,status=422)
+   before=int(db('SELECT count(*) AS c FROM datas WHERE type_id=6')[0]['c'])
+   assert 'Ad (en fazla 50 karakter), geçerli e-posta ve 10–255 karakterlik bir mesaj girin.' in request(guest,'POST','/contact',dict(long,name='Test visitor',message='m'*256),status=422)
+   assert int(db('SELECT count(*) AS c FROM datas WHERE type_id=6')[0]['c'])==before
+   fields={'name':'ş'*50,'email':'visitor@example.test','phone':'','message':('<b>Literal message</b> saved in SQLite. '+'x'*255)[:255],'website':'','csrf_token':contact_token}
    result=request(guest,'POST','/contact',fields);assert 'Mesajınız kaydedildi' in result
    html=request(admin,'GET','/panel/messages');assert '&lt;b&gt;Literal message&lt;/b&gt;' in html
    for _ in range(4):request(guest,'POST','/contact',fields)

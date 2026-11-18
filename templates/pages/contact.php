@@ -3,9 +3,9 @@
 <?php if($contactError):?><div role="alert" class="alert alert-danger"><?=e($contactError)?></div><?php endif ?>
 <form id="contactForm" action="/contact" method="post"><input type="hidden" name="csrf_token" value="<?=e(panelCsrfToken())?>">
 <div class="contact-honeypot" aria-hidden="true"><label for="website">Website</label><input id="website" name="website" tabindex="-1" autocomplete="off"></div>
-<?php foreach([['name','Adınız soyadınız','text',100,true],['email','E-posta adresiniz','email',254,true],['phone','Telefon (isteğe bağlı)','tel',50,false]] as [$key,$label,$type,$max,$required]):?>
+<?php foreach([['name','Adınız soyadınız','text',50,true],['email','E-posta adresiniz','email',254,true],['phone','Telefon (isteğe bağlı)','tel',50,false]] as [$key,$label,$type,$max,$required]):?>
 <div class="form-floating mb-3"><input class="form-control" id="<?=$key?>" name="<?=$key?>" type="<?=$type?>" maxlength="<?=$max?>" placeholder="<?=$label?>" <?=$required?'required':''?> value="<?=e($values[$key]??'')?>"><label for="<?=$key?>"><?=$label?></label></div><?php endforeach ?>
-<div class="form-floating mb-3"><textarea class="form-control" id="message" name="message" style="height:10rem" minlength="10" maxlength="5000" placeholder="Mesajınız" required><?=e($values['message']??'')?></textarea><label for="message">Mesajınız</label></div>
+<div class="form-floating mb-3"><textarea class="form-control" id="message" name="message" style="height:10rem" minlength="10" maxlength="255" placeholder="Mesajınız" required><?=e($values['message']??'')?></textarea><label for="message">Mesajınız</label></div>
 <div class="d-grid"><button class="btn btn-primary btn-lg" type="submit">Mesaj gönder</button></div></form>
 <p class="small text-muted mt-3 mb-0">Doğrudan iletişim: <a href="mailto:<?=e(setting('email'))?>"><?=e(setting('email'))?></a></p>
 </div></div></div></div></section>
