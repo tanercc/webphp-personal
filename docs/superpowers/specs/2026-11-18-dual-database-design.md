@@ -1,6 +1,8 @@
 # Dual database support (SQLite + MySQL) — design
 
-**Status:** Draft for approval. Phase 1 of 2. Phase 2 (schema fixes and the `media` module) gets its own design and becomes the first real migration built on this phase.
+> **Amendment (2026-11-18, owner decision during implementation):** There are no existing sites with data to carry forward, so the migration system (§4, `schema_migrations`, `tools/migrate.php`, legacy stamping, backups, and the maintenance gate) is **removed**. Every database is built from scratch from `database/schema.php` by `tools/install.php`; seeders (`database/seed.php`, `database/seed-base.php`) provide demo and test data. Schema changes edit `database/schema.php` and reinstall. Sections below that describe migrations are superseded. The live demo database is reinstalled from scratch once, with the owner's approval.
+
+**Status:** Approved, amended. Phase 1 of 2. Phase 2 (schema fixes and the `media` module) gets its own design and becomes the first real migration built on this phase.
 
 ## Intent
 

@@ -10,6 +10,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-11-18-dual-database-design.md`
 
+> **Amendment (owner decision during execution):** migrations removed. Task 4 was implemented and is undone inside Task 5, which instead builds every database from `database/schema.php` (`panelCreateSchema()` in `panel/include/db_install.php`) and seeds it. Task 8 (maintenance gate) is dropped. Task 9 reinstalls the live demo database from scratch (with approval) instead of stamping it, and documents "edit `schema.php` and reinstall" instead of a migration workflow.
+
 ## Global Constraints
 
 - No Composer, npm, or third-party PHP libraries. PDO only.
