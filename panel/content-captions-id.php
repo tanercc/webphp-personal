@@ -42,7 +42,7 @@ if ($siteRequestId > 0 && $rowData = dbGetTableRow($siteRequest, $siteRequestId)
       <div class="col-sm-6">
         <ol class="breadcrumb float-sm-right">
           <li class="breadcrumb-item"><a href="<?= panelHtml(url('/')) ?>">Anasayfa</a></li>
-          <li class="breadcrumb-item active"><a href="<?= panelHtml(url('variables')) ?>">Başlıklar</a></li>
+          <li class="breadcrumb-item active"><a href="<?= panelHtml(url('captions')) ?>">Başlıklar</a></li>
         </ol>
       </div>
     </div>
