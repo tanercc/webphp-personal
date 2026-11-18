@@ -8,6 +8,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 // DB connections
 //=======================================================
 require_once __DIR__.'/database.php';
+require_once __DIR__.'/db_schema.php';
 $conn=panelDatabaseConnection();
 
 // mysqli query
@@ -369,7 +370,7 @@ function dbLegacyWriteValues($table, array $fields): array
     }
     $values[$key] = $value;
   }
-  return $values;
+  return panelValidateWrite($table, $values);
 }
 
 function dbInsertTableRow($table, $fields)

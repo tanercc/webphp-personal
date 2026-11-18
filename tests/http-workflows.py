@@ -136,11 +136,19 @@ with tempfile.TemporaryDirectory(prefix='personal-'+DRIVER+'-test-') as tmp, scr
    lid=db('SELECT id FROM data_lang WHERE row_id=1 AND lang_id=1')[0]['id']
    js(admin,'PUT','/panel/api/lang',{'lang_table':'data_lang','id':lid,'content':'<p>Safe project</p><script>alert(1)</script>'},token=token)
    html=request(guest,'GET','/projects/atolye');assert '<p>Safe project</p>' in html and '<script>alert(1)</script>' not in html
+   # Writes are validated against database/schema.php, identically on both engines.
+   r=js(admin,'PUT','/panel/api/pages/1',{'name':'ş'*51},token=token,status=422);assert r=={'error':'Invalid value: name'},r
+   js(admin,'PUT','/panel/api/pages/1',{'name':'ş'*50},token=token);assert js(admin,'GET','/panel/api/pages/1')['name']=='ş'*50
+   js(admin,'PUT','/panel/api/pages/1',{'type_id':'abc'},token=token,status=422)
+   js(admin,'PUT','/panel/api/pages/1',{'type_id':''},token=token);assert db('SELECT type_id FROM pages WHERE id=1')[0]['type_id'] is None
+   js(admin,'PUT','/panel/api/lang',{'lang_table':'page_lang','id':lid,'title':'x'*256},token=token,status=422)
    js(admin,'PUT','/panel/api/cats/999',{'template_id':'999'},token=token,status=422)
    html=request(guest,'GET','/contact');contact_token=csrf(html)
    request(guest,'POST','/contact',{'name':'Test visitor','email':'visitor@example.test','message':'Synthetic contact message','csrf_token':'wrong'},status=403)
    request(guest,'POST','/contact',{'name':'Test','email':'bad','message':'short','csrf_token':contact_token},status=422)
-   fields={'name':'Demo visitor','email':'visitor@example.test','phone':'','message':'<b>Literal message</b> saved in SQLite.','website':'','csrf_token':contact_token}
+   long={'name':'ş'*51,'email':'visitor@example.test','phone':'','message':'Synthetic contact message','website':'','csrf_token':contact_token}
+   assert 'Ad, geçerli e-posta ve en az 10 karakterlik bir mesaj girin.' in request(guest,'POST','/contact',long,status=422)
+   fields={'name':'ş'*50,'email':'visitor@example.test','phone':'','message':'<b>Literal message</b> saved in SQLite.','website':'','csrf_token':contact_token}
    result=request(guest,'POST','/contact',fields);assert 'Mesajınız kaydedildi' in result
    html=request(admin,'GET','/panel/messages');assert '&lt;b&gt;Literal message&lt;/b&gt;' in html
    for _ in range(4):request(guest,'POST','/contact',fields)

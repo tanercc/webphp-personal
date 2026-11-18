@@ -2,6 +2,7 @@
 defined('BASEPATH') or exit('No direct script access allowed');
 require_once __DIR__ . '/../include/session.php';
 require_once __DIR__ . '/../include/data_templates.php';
+require_once __DIR__ . '/../include/db_schema.php';
 
 function apiResources(): array
 {
@@ -133,7 +134,7 @@ function apiValidateFields(string $table, array $input, array $columns, bool $up
         }
         $fields[$key] = $value;
     }
-    return $fields;
+    return panelValidateWrite($table, $fields);
 }
 
 function apiValidateOptions(string $table, array $options, array $columns): array
