@@ -17,7 +17,7 @@ interface PanelDbDialect {
 }
 
 const PANEL_DB_LOGICAL_TYPES = ['id', 'int', 'tinyint', 'varchar', 'text', 'datetime', 'timestamp'];
-const PANEL_DB_IGNORED_TABLES = ['schema_migrations', 'sqlite_sequence'];
+const PANEL_DB_IGNORED_TABLES = ['sqlite_sequence'];
 
 function panelDbDialect(string $driver): PanelDbDialect {
     return match ($driver) {
@@ -375,7 +375,7 @@ final class PanelMysqlDialect implements PanelDbDialect {
         return panelDbParseType($c['COLUMN_TYPE']);
     }
 
-    /** Constraint name used by createTableSql() and the migrator's ALTER TABLE ... ADD CONSTRAINT. */
+    /** Foreign-key constraint name used by createTableSql(). */
     public function foreignKeyName(string $table, string $column): string { return panelDbIdentifier('fk_'.$table.'_'.$column); }
 }
 

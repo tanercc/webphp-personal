@@ -1,7 +1,7 @@
 <?php
 /** Test helper: run one query against a disposable database and print its rows as JSON,
  * or create/drop a scratch MySQL database (cms_test_<12 hex>).
- * php tests/db-query.php --sql="..." [--params='[json]']   (PANEL_DB_DRIVER, PANEL_DB_FILE / PANEL_DB_HOST, _PORT, _NAME, _USER, _PASSWORD)
+ * php tests/db-query.php --sql="..." [--params='[json]'] | --table-exists=NAME   (PANEL_DB_DRIVER, PANEL_DB_FILE / PANEL_DB_HOST, _PORT, _NAME, _USER, _PASSWORD)
  * php tests/db-query.php --create-database=NAME | --drop-database=NAME   (PANEL_TEST_MYSQL_HOST, _PORT, _USER, _PASSWORD)
  */
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
@@ -11,7 +11,7 @@ require dirname(__DIR__).'/panel/include/db_dialect.php';
 function dbQueryFail(string $message, int $code): never { fwrite(STDERR, $message.PHP_EOL); exit($code); }
 function dbQueryEnv(string $name): string { $value = getenv($name); return $value === false ? '' : $value; }
 
-$options = getopt('', ['sql:', 'params:', 'create-database:', 'drop-database:']);
+$options = getopt('', ['sql:', 'params:', 'table-exists:', 'create-database:', 'drop-database:']);
 try {
     if (isset($options['create-database']) || isset($options['drop-database'])) {
         $create = isset($options['create-database']);
@@ -27,7 +27,10 @@ try {
         echo '[]'.PHP_EOL;
         exit(0);
     }
-    if (!isset($options['sql']) || (string)$options['sql'] === '') { dbQueryFail('Usage: php tests/db-query.php --sql="..." [--params=\'[json]\']', 1); }
+    $tableExists = isset($options['table-exists']) ? (string)$options['table-exists'] : null;
+    if ($tableExists === null && (!isset($options['sql']) || (string)$options['sql'] === '')) {
+        dbQueryFail('Usage: php tests/db-query.php --sql="..." [--params=\'[json]\'] | --table-exists=NAME', 1);
+    }
     $params = json_decode((string)($options['params'] ?? '[]'), true, 32, JSON_THROW_ON_ERROR);
     if (!is_array($params) || !array_is_list($params)) { dbQueryFail('--params must be a JSON list', 1); }
     // Task 3 replaces this with panelDatabaseConnection(); until then the target comes from the environment only.
@@ -39,7 +42,12 @@ try {
         $config = ['driver' => 'mysql', 'host' => dbQueryEnv('PANEL_DB_HOST'), 'port' => (int)(dbQueryEnv('PANEL_DB_PORT') ?: 3306), 'name' => dbQueryEnv('PANEL_DB_NAME'),
             'user' => dbQueryEnv('PANEL_DB_USER'), 'password' => dbQueryEnv('PANEL_DB_PASSWORD'), 'charset' => 'utf8mb4'];
     }
-    $pdo = panelDbDialect($driver)->connect($config);
+    $dialect = panelDbDialect($driver);
+    $pdo = $dialect->connect($config);
+    if ($tableExists !== null) {
+        echo json_encode($dialect->tableExists($pdo, $tableExists)).PHP_EOL;
+        exit(0);
+    }
     $statement = $pdo->prepare((string)$options['sql']);
     $statement->execute($params);
     $rows = $statement->columnCount() ? $statement->fetchAll(PDO::FETCH_ASSOC) : [];

@@ -51,7 +51,7 @@ try {
     }
     $tracked = explode("\0", scaffoldGit($root, ['ls-files', '-z']));
     $files = ['.gitattributes','.gitignore','.htaccess','router.php','app/bootstrap.php',
-        'config/config.php','config/data-templates.php','database/schema.sql','database/seed-base.sql',
+        'config/config.php','config/data-templates.php','database/schema.php','database/seed-base.php',
         'panel/include/config.php','panel/plugins/DEPENDENCIES.json','tools/install.php','tools/create-site.php','tools/verify.php',
         'tools/serve.ps1','storage/.gitkeep','uploads/.htaccess',
         'docs/yeni-site.md','docs/mimari.md'];

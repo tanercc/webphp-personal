@@ -18,10 +18,30 @@ if ($installation['profile'] === 'demo' || is_file($root.'/docs/theme-assets.jso
         if (hash_file('sha256', $root.'/'.$asset['file']) !== $asset['sha256']) { throw new RuntimeException('Theme hash mismatch: '.$asset['file']); }
     }
 }
-$path = panelDatabaseConfig()['file'] ?? '';
-if (!is_file($path)) { fwrite(STDERR, "Run tools/install.php first; no database created by verification.\n"); exit(1); }
-$pdo = new PDO('sqlite:'.$path, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-if ($pdo->query('PRAGMA integrity_check')->fetchColumn() !== 'ok' || $pdo->query('PRAGMA foreign_key_check')->fetch()) {
-    throw new RuntimeException('SQLite integrity failed');
+$config = panelDatabaseConfig();
+if ($config['driver'] === 'sqlite' && !is_file($config['file'])) { fwrite(STDERR, "Run tools/install.php first; no database created by verification.\n"); exit(1); }
+try {
+    // A runtime connection never creates a database; SQLite checks below are read-only.
+    $db = new PanelDbConnection(panelDbDialect($config['driver']), $config);
+} catch (Throwable) {
+    fwrite(STDERR, "Database unavailable.\n"); exit(1);
 }
-echo 'PASS: '.$count.' panel vendor hashes, '.count($theme).' official theme assets, SQLite integrity and foreign keys'.PHP_EOL;
+$schema = require $root.'/database/schema.php';
+$binary = $db->dialect()->name() === 'mysql';
+try {
+    $problems = $db->dialect()->integrityErrors($db->pdo(), $schema);
+    $expected = panelDbNormalizeSchema($schema, $binary)['tables'];
+    $actual = panelDbNormalizeSchema($db->dialect()->describe($db->pdo()), $binary)['tables'];
+    foreach (array_unique(array_merge(array_keys($expected), array_keys($actual))) as $table) {
+        if (($expected[$table] ?? null) !== ($actual[$table] ?? null)) {
+            $problems[] = 'Table '.$table.' '.(!isset($actual[$table]) ? 'is missing' : (!isset($expected[$table]) ? 'is not in database/schema.php' : 'differs from database/schema.php')).'.';
+        }
+    }
+} catch (Throwable) {
+    $problems = ['Database checks could not run.'];
+}
+if ($problems) {
+    foreach ($problems as $line) { fwrite(STDERR, 'FAIL: '.$line.PHP_EOL); }
+    exit(1);
+}
+echo 'PASS: '.$count.' panel vendor hashes, '.count($theme).' official theme assets, '.($binary ? 'MySQL' : 'SQLite').' integrity and schema'.PHP_EOL;

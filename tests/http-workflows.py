@@ -45,7 +45,7 @@ with tempfile.TemporaryDirectory(prefix='personal-sqlite-test-') as tmp:
     for url,sri in re.findall(r'(?:href|src)="([^\"]+)" integrity="(sha384-[^\"]+)"',html):
      asset=ROOT/url.split('?')[0].lstrip('/');assert sri=='sha384-'+base64.b64encode(hashlib.sha384(asset.read_bytes()).digest()).decode()
    request(guest,'GET','/missing-page',status=404)
-   for path in ['/storage/personal.sqlite','/database/schema.sql','/database/seed.sql','/config/config.php','/app/bootstrap.php','/templates/pages/home.php','/tools/install.php','/.git/config','/panel/include/database.php','/panel/include/db_dialect.php','/panel/include/db_migrations.php','/tools/migrate.php','/database/migrations/0001_baseline.php','/tests/fixtures/legacy-schema.sql','/panel/plugins/util/pass.php','/panel/temp/Untitled-1.js','/panel/plugins/ckeditor/samples/index.html','/panel/plugins/filemanager/../../../storage/personal.sqlite']:
+   for path in ['/storage/personal.sqlite','/database/schema.php','/database/seed.php','/database/seed-base.php','/config/config.php','/app/bootstrap.php','/templates/pages/home.php','/tools/install.php','/.git/config','/panel/include/database.php','/panel/include/db_dialect.php','/panel/include/db_install.php','/tests/db-query.php','/panel/plugins/util/pass.php','/panel/temp/Untitled-1.js','/panel/plugins/ckeditor/samples/index.html','/panel/plugins/filemanager/../../../storage/personal.sqlite']:
     request(guest,'GET',path,status=403)
    js(guest,'GET','/panel/api/pages',status=401)
    request(guest,'GET','/panel/plugins/filemanager/dialog.php?type=1',status=403)
@@ -72,7 +72,7 @@ with tempfile.TemporaryDirectory(prefix='personal-sqlite-test-') as tmp:
    assert js(admin,'GET','/panel/api/pages/'+str(rid))['name']==fields['name']
    js(admin,'PUT','/panel/api/pages/'+str(rid),{'name':'Updated','is_active':'0'},token=token)
    js(admin,'DELETE','/panel/api/pages/'+str(rid),token=token)
-   guarded=[f for d in ['app','panel/include','panel/api','templates'] for f in (ROOT/d).rglob('*.php') if f.name not in {'database.php','db_dialect.php','db_migrations.php'} or d=='panel/api']+[ROOT/'index.php']
+   guarded=[f for d in ['app','panel/include','panel/api','templates'] for f in (ROOT/d).rglob('*.php') if f.name not in {'database.php','db_dialect.php'} or d=='panel/api']+[ROOT/'index.php']
    for f in guarded:
     text=f.read_text(encoding='utf-8')
     for pattern in NON_PORTABLE_SQL:assert not re.search(pattern,text,re.I),(f.name,pattern)
@@ -132,11 +132,13 @@ with tempfile.TemporaryDirectory(prefix='cms-starter-test-') as tmp:
  assert result.returncode==1 and not (ROOT/'forbidden-nested-site').exists()
  create=subprocess.run([PHP,str(ROOT/'tools/create-site.php'),'--target='+str(target),'--name=Yeni Firma & Ortakları'],cwd=ROOT,capture_output=True)
  assert create.returncode==0,create.stderr.decode(errors='replace')
- for forbidden in ['.git','storage/personal.sqlite','storage/site.sqlite','config/config.runtime.php','assets/profile.png','database/seed.sql','templates/pages','app/contact.php','panel/content-messages.php']:
+ for forbidden in ['.git','storage/personal.sqlite','storage/site.sqlite','config/config.runtime.php','assets/profile.png','database/seed.php','tools/seed-media.php','templates/pages','app/contact.php','panel/content-messages.php']:
   assert not (target/forbidden).exists(),forbidden
  assert not list((target/'uploads').rglob('*.png'))
+ for required in ['database/schema.php','database/seed-base.php','panel/include/db_dialect.php','panel/include/db_install.php']:
+  assert (target/required).is_file(),required
  assert "'starter'" in (target/'config/site.php').read_text(encoding='utf-8')
- assert 'PersonalDemo!2026' not in (target/'database/seed-base.sql').read_text(encoding='utf-8')
+ assert 'PersonalDemo!2026' not in (target/'database/seed-base.php').read_text(encoding='utf-8')
  before=(target/'config/site.php').read_bytes()
  repeat=subprocess.run([PHP,str(ROOT/'tools/create-site.php'),'--target='+str(target)],cwd=ROOT,capture_output=True)
  assert repeat.returncode==1 and before==(target/'config/site.php').read_bytes()
@@ -155,7 +157,8 @@ with tempfile.TemporaryDirectory(prefix='cms-starter-test-') as tmp:
  assert c.execute('SELECT count(*) FROM datas').fetchone()[0]==0
  assert c.execute('SELECT count(*) FROM pages').fetchone()[0]==1
  assert c.execute('SELECT count(*) FROM logs').fetchone()[0]==0
- assert c.execute('SELECT count(*) FROM sqlite_master WHERE name="contact_limits"').fetchone()[0]==1
+ exists=subprocess.run([PHP,str(ROOT/'tests/db-query.php'),'--table-exists=contact_limits'],cwd=ROOT,env=dict(env,PANEL_DB_DRIVER='sqlite',PANEL_DB_FILE=str(target/'storage/site.sqlite')),capture_output=True,text=True)
+ assert exists.returncode==0 and exists.stdout.strip()=='true',exists.stderr
  assert not list((target/'uploads/files').rglob('*'))
  fingerprint=hashlib.sha256((target/'storage/site.sqlite').read_bytes()).hexdigest()
  refuse=subprocess.run([PHP,str(target/'tools/install.php'),'--admin-email='+email],cwd=target,env=env,capture_output=True)
@@ -178,7 +181,7 @@ with tempfile.TemporaryDirectory(prefix='cms-starter-test-') as tmp:
    assert 'assets/profile.png' not in html
    for url,sri in re.findall(r'href="([^\"]+)" integrity="(sha384-[^\"]+)"',html):
     asset=target/url.split('?')[0].lstrip('/');assert sri=='sha384-'+base64.b64encode(hashlib.sha384(asset.read_bytes()).digest()).decode()
-   for path in ['/storage/site.sqlite','/database/seed-base.sql','/config/site.php','/starter/site/index.php','/starter/site/css/site.css','/tools/create-site.php']:
+   for path in ['/storage/site.sqlite','/database/seed-base.php','/database/schema.php','/config/site.php','/starter/site/index.php','/starter/site/css/site.css','/tools/create-site.php']:
     request(guest,'GET',path,status=403)
    js(guest,'GET','/panel/api/pages',status=401)
    login=request(admin,'GET','/panel/');token=csrf(login)
